@@ -6,12 +6,11 @@ class AssociateModel {
   final String start_date;
   final String end_date;
   final String financial_year;
-  final String contact_person;
+  final String local_csr_name;
+  final String local_csr_id;
   final String email_id;
   final String mobile;
-  final List<String> state_code;
-  final List<String> district_code;
-  final List<String> village_code;
+  final List<Map<String, dynamic>> location;
   final String total_budget;
   final String milestone;
   final String ENFAID;
@@ -24,13 +23,12 @@ class AssociateModel {
       {required this.project_code,
       required this.associate_project_name,
       required this.associate_project_code,
-      required this.contact_person,
+      required this.local_csr_name,
+      required this.local_csr_id,
       required this.financial_year,
       required this.email_id,
       required this.mobile,
-      required this.state_code,
-      required this.district_code,
-      required this.village_code,
+      required this.location,
       required this.project_name,
       required this.start_date,
       required this.end_date,
@@ -48,12 +46,11 @@ class AssociateModel {
       project_code: json['project_code'] ?? '',
       associate_project_name: json['associate_project_name'] ?? '',
       associate_project_code: json['associate_project_code'] ?? '',
-      contact_person: json['contact_person'] ?? '',
+      local_csr_name: json['local_csr_name'] ?? '',
+      local_csr_id: json['local_csr_id'] ?? '',
       email_id: json['email_id'] ?? '',
       mobile: json['mobile'] ?? '',
-      state_code: List<String>.from(json['state_code'] ?? []),
-      district_code: List<String>.from(json['district_code'] ?? []),
-      village_code: List<String>.from(json['village_code'] ?? []),
+      location: List<Map<String, dynamic>>.from(json['location'] ?? []),
       status: json['status'] ?? false,
       project_name: json['project_name'] ?? '',
       start_date: json['start_date'] ?? '',
@@ -70,7 +67,7 @@ class AssociateModel {
   bool matchesSearch(String query) {
     query = query.toLowerCase();
     return associate_project_name.toLowerCase().contains(query) ||
-        contact_person.toString().contains(query) ||
+        local_csr_name.toString().contains(query) ||
         associate_project_code.toLowerCase().contains(query) ||
         project_code.toLowerCase().contains(query);
   }

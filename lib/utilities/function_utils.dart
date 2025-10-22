@@ -86,6 +86,53 @@ class Utils {
     }
   }
 
+  static List<String> getMonthsInFinancialYear(
+      String startDate, String endDate) {
+    List<String> monthYearList = [];
+
+    // Parse input dates
+    DateTime start = DateTime.parse(startDate);
+    DateTime end = DateTime.parse(endDate);
+
+    // Ensure start <= end
+    if (start.isAfter(end)) {
+      DateTime temp = start;
+      start = end;
+      end = temp;
+    }
+
+    // Loop through months from start to end
+    DateTime current = DateTime(start.year, start.month);
+    while (current.isBefore(end) || current.isAtSameMomentAs(end)) {
+      String monthName = _getMonthName(current.month);
+      String formatted = "$monthName ${current.year}";
+      monthYearList.add(formatted);
+
+      // Move to next month
+      current = DateTime(current.year, current.month + 1);
+    }
+
+    return monthYearList;
+  }
+
+  static String _getMonthName(int month) {
+    const months = [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December"
+    ];
+    return months[month - 1];
+  }
+
   static String replaceSpaceWithUnderscore(String input) {
     return input.replaceAll(' ', '_');
   }

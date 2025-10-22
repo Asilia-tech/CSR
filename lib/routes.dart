@@ -4,7 +4,6 @@ import 'package:sterlite_csr/screens/change_password.dart';
 import 'package:sterlite_csr/screens/home_screen.dart';
 import 'package:sterlite_csr/screens/landing_screen.dart';
 import 'package:sterlite_csr/screens/login_screen.dart';
-import 'package:sterlite_csr/screens/master/budget/budget_list.dart';
 import 'package:sterlite_csr/screens/master/district/district_list.dart';
 import 'package:sterlite_csr/screens/master/due_dilligence/due_diligence_list.dart';
 import 'package:sterlite_csr/screens/master/financial/financial_list.dart';
@@ -34,7 +33,6 @@ class AppRoutes {
     'associate-project-list': const AssociateProjectList(),
     'vendor-list': const VendorList(),
     'user-list': const UserList(),
-    'budget-list': const BudgetList(),
     'reports': const Flutter404Page(),
     'key-indicators': const Flutter404Page(),
     'data-entry': const Flutter404Page(),
@@ -53,11 +51,10 @@ class AppRoutes {
     'District': 'district-list',
     'Village': 'village-list',
     'Financial Year': 'financial-list',
-    'Project': 'project-list',
+    'Main Project': 'project-list',
     'Associate Project': 'associate-project-list',
     'Vendor/NGO': 'vendor-list',
     'User': 'user-list',
-    'Budget': 'budget-list',
     'Change Password': 'change-password',
     'Reports': 'reports',
     'Key Indicators': 'key-indicators',

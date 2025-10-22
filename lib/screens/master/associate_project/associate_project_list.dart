@@ -1,16 +1,16 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:sterlite_csr/constants.dart';
-import 'package:sterlite_csr/models/district_model.dart';
 import 'package:sterlite_csr/models/associate_model.dart';
-import 'package:sterlite_csr/models/state_model.dart';
+import 'package:sterlite_csr/models/project_model.dart';
+import 'package:sterlite_csr/screens/master/budget/budget_edit.dart';
 import 'package:sterlite_csr/utilities/api-service.dart';
 import 'package:sterlite_csr/utilities/function_utils.dart';
 import 'package:sterlite_csr/utilities/method_utils.dart';
-import 'package:sterlite_csr/utilities/utils/search-dropdown_utils.dart';
 import 'package:sterlite_csr/utilities/widget_utils.dart';
 import 'package:sterlite_csr/utilities/widget_decoration.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sterlite_csr/utilities/utils/search-dropdown_utils.dart';
 import 'package:sterlite_csr/screens/master/associate_project/associate_project_edit.dart';
 
 class AssociateProjectList extends StatefulWidget {
@@ -26,10 +26,9 @@ class _AssociateProjectListState extends State<AssociateProjectList> {
   String msg = 'Please wait...';
   String userRole = "";
 
-  String selectedState = "";
-  List<StateModel> stateOptions = [];
-  String selectedDistrict = "";
-  List<DistrictModel> districtOptions = [];
+  String selectedProject = "";
+  List<ProjectModel> projectOptions = [];
+
   final TextEditingController _searchController = TextEditingController();
   List<AssociateModel> _associate_projects = [];
   List<AssociateModel> _filteredassociate_project = [];
@@ -158,7 +157,7 @@ class _AssociateProjectListState extends State<AssociateProjectList> {
                     ),
                   );
                 },
-                label: Text('Add associate_project',
+                label: Text('Add associate project',
                     style: TextStyle(
                       color: Get.isDarkMode
                           ? Colors.white
@@ -169,62 +168,29 @@ class _AssociateProjectListState extends State<AssociateProjectList> {
             ]),
         body: Column(
           children: [
-            Row(
-              children: [
-                Flexible(
-                  child: SearchDropdownUtils.buildSearchableDropdown(
-                    items: stateOptions.map((state) => state.name).toList(),
-                    value: selectedState,
-                    label: "State",
-                    icon: Icons.map,
-                    hint: "Select state",
-                    onChanged: (value) async {
-                      if (value != null) {
-                        setState(() {
-                          selectedState = value;
-                          selectedDistrict = '';
-                          districtOptions.clear();
-                        });
-                      }
-                      await getDistrictInfo();
-                    },
-                    displayTextFn: (item) => item,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return "Please select a state";
-                      }
-                      return null;
-                    },
-                  ),
-                ),
-                SizedBox(width: 16),
-                Flexible(
-                  child: SearchDropdownUtils.buildSearchableDropdown<String>(
-                    items: districtOptions.map((city) => city.name).toList(),
-                    value: selectedDistrict,
-                    label: "District",
-                    icon: Icons.location_city,
-                    hint: "Select city",
-                    onChanged: (value) async {
-                      if (value != null) {
-                        setState(() {
-                          selectedDistrict = value;
-                          _associate_projects.clear();
-                          _filteredassociate_project.clear();
-                        });
-                      }
-                      await getAssociateProjectInfo();
-                    },
-                    displayTextFn: (item) => item,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return "Please select a state";
-                      }
-                      return null;
-                    },
-                  ),
-                ),
-              ],
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: SearchDropdownUtils.buildSearchableDropdown(
+                items: projectOptions.map((e) => e.project_name).toList(),
+                value: selectedProject,
+                label: "Project",
+                icon: Icons.map,
+                hint: "Select project",
+                onChanged: (value) async {
+                  if (value != null) {
+                    setState(() {
+                      selectedProject = value;
+                    });
+                    await getAssociatedProjectInfo();
+                  }
+                },
+                displayTextFn: (item) => item,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return "Please select a project";
+                  }
+                },
+              ),
             ),
             !isFind
                 ? Center(child: DecorationWidgets.filterTextStyle(msg))
@@ -251,7 +217,7 @@ class _AssociateProjectListState extends State<AssociateProjectList> {
                                         MainAxisAlignment.spaceBetween,
                                     children: [
                                       Text(
-                                        'Total: ${_filteredassociate_project.length} associate_projects',
+                                        'Total: ${_filteredassociate_project.length} associate projects',
                                         style: const TextStyle(
                                           fontWeight: FontWeight.bold,
                                           fontSize: 16,
@@ -349,78 +315,46 @@ class _AssociateProjectListState extends State<AssociateProjectList> {
     setState(() {
       userRole = prefs.getString('role') ?? '';
     });
-    await getStateInfo();
+    await getProjectInfo();
   }
 
-  Future getStateInfo() async {
+  Future getProjectInfo() async {
     setState(() {
-      stateOptions.clear();
+      projectOptions.clear();
     });
     try {
-      String uri = Constants.MASTER_URL + '/state';
+      String uri = Constants.MASTER_URL + '/main-project';
       Map params = {"action": "list"};
+
       Map tempMap = await MethodUtils.apiCall(uri, params);
-      setState(() {
-        isFind = tempMap['isValid'];
-        if (isFind) {
+      if (tempMap['isValid']) {
+        setState(() {
           List tempList = tempMap['info'];
           for (var item in tempList) {
-            stateOptions.add(StateModel.fromJson(item));
+            projectOptions.add(ProjectModel.fromJson(item));
           }
-          msg = 'Select a state and city to view associate_projects';
-        } else {
-          msg = tempMap['message'];
-        }
-      });
+          msg = "choose project to load associate project";
+        });
+      } else {
+        msg = tempMap['message'] ?? "Failed to load project";
+        UtilsWidgets.showToastFunc(msg);
+      }
     } catch (e) {
       UtilsWidgets.showToastFunc(e.toString());
     }
   }
 
-  Future getDistrictInfo() async {
-    setState(() {
-      districtOptions.clear();
-    });
-    try {
-      String uri = Constants.MASTER_URL + '/district';
-      Map params = {
-        "action": "list",
-        "state_code": stateOptions
-            .firstWhere((element) => element.name == selectedState)
-            .state_code,
-      };
-      Map tempMap = await MethodUtils.apiCall(uri, params);
-      setState(() {
-        isFind = tempMap['isValid'];
-        if (isFind) {
-          List tempList = tempMap['info'];
-          for (var item in tempList) {
-            districtOptions.add(DistrictModel.fromJson(item));
-          }
-          msg = 'Select a city to view associate_projects';
-        } else {
-          msg = tempMap['message'];
-        }
-      });
-    } catch (e) {
-      UtilsWidgets.showToastFunc(e.toString());
-    }
-  }
-
-  Future getAssociateProjectInfo() async {
+  Future getAssociatedProjectInfo() async {
     setState(() {
       _associate_projects.clear();
     });
     try {
-      String uri = Constants.MASTER_URL + '/associate_project';
+      String uri = Constants.OPERATION_URL + '/associate-project';
       Map params = {
         "action": "list",
-        "state_code": stateOptions
-            .firstWhere((element) => element.name == selectedState)
-            .state_code,
-        "district_code": districtOptions
-            .firstWhere((element) => element.name == selectedDistrict)
-            .district_code,
+        "project_code": projectOptions
+            .firstWhere((element) => element.project_name == selectedProject)
+            .project_code,
       };
       Map<String, dynamic> tempMap = await apiController.fetchData(uri, params);
       setState(() {
@@ -444,7 +378,7 @@ class _AssociateProjectListState extends State<AssociateProjectList> {
 
   Future fetchAssociateProjectInfo(String associate_project_code) async {
     try {
-      String uri = Constants.MASTER_URL + '/associate_project';
+      String uri = Constants.OPERATION_URL + '/associate-project';
       Map params = {
         "action": "get",
         'associate_project_code': associate_project_code
@@ -536,6 +470,11 @@ class _AssociateProjectListState extends State<AssociateProjectList> {
               numeric: true,
             ),
             const DataColumn(
+              label: Text('Set Budget',
+                  style: TextStyle(
+                      color: Colors.white, fontWeight: FontWeight.bold)),
+            ),
+            const DataColumn(
               label: Text('Actions',
                   style: TextStyle(
                       color: Colors.white, fontWeight: FontWeight.bold)),
@@ -549,6 +488,18 @@ class _AssociateProjectListState extends State<AssociateProjectList> {
                 MaterialPageRoute(
                   builder: (context) => EditAssociate(
                       isEdit: true, associate_project: AssociateProject),
+                ),
+              );
+              if (result == true) {
+                await fetchAssociateProjectInfo(
+                    AssociateProject.associate_project_code);
+              }
+            },
+            onBudgetPressed: (AssociateProject) async {
+              final result = await Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) =>
+                      EditBudget(associate_project: AssociateProject),
                 ),
               );
               if (result == true) {
@@ -572,7 +523,7 @@ class _AssociateProjectListState extends State<AssociateProjectList> {
             controller: _searchController,
             decoration: InputDecoration(
               labelText: 'Search',
-              hintText: 'Search by name or associate_project code',
+              hintText: 'Search by name or associate project code',
               prefixIcon: Icon(Icons.search),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -603,13 +554,26 @@ class _AssociateProjectListState extends State<AssociateProjectList> {
                           });
                         },
                       ),
-                      DataColumn(label: Text('AssociateProject Code')),
+                      DataColumn(label: Text('Associate Project Code')),
+                      DataColumn(label: Text('Budget')),
                       DataColumn(label: Text('Edit')),
                     ],
                     _filteredassociate_project
                         .map((e) => DataRow(cells: [
                               DataCell(Text(e.associate_project_name)),
                               DataCell(Text(e.associate_project_code)),
+                              DataCell(IconButton(
+                                icon: Icon(
+                                  Icons.card_giftcard,
+                                  color: Constants.quartaryColor,
+                                ),
+                                onPressed: () async {
+                                  await Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                          builder: (context) => EditBudget(
+                                              associate_project: e)));
+                                },
+                              )),
                               DataCell(IconButton(
                                 icon: const Icon(
                                   Icons.edit,
@@ -646,9 +610,10 @@ class _associate_projectsDataSource extends DataTableSource {
   final BuildContext context;
   final List<AssociateModel> associate_projects;
   final Function(AssociateModel) onEditPressed;
+  final Function(AssociateModel) onBudgetPressed;
 
   _associate_projectsDataSource(this.context, this.associate_projects,
-      {required this.onEditPressed});
+      {required this.onEditPressed, required this.onBudgetPressed});
 
   @override
   DataRow? getRow(int index) {
@@ -662,6 +627,15 @@ class _associate_projectsDataSource extends DataTableSource {
         DataCell(Text(AssociateProject.associate_project_name)),
         DataCell(Text(AssociateProject.associate_project_code)),
         DataCell(DecorationWidgets.buildStatusTag(context, status)),
+        DataCell(
+          IconButton(
+            icon: const Icon(Icons.card_giftcard, size: 16),
+            visualDensity: VisualDensity.compact,
+            onPressed: () => onBudgetPressed(AssociateProject),
+            tooltip: 'Budget',
+            color: Constants.quartaryColor,
+          ),
+        ),
         DataCell(
           IconButton(
             icon: const Icon(Icons.edit, size: 16),

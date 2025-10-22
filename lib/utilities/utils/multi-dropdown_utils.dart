@@ -14,7 +14,7 @@ class MultiSelectDropdownUtils {
     String? Function(List<T>)? validator,
     bool showSearchBox = true,
     String searchFieldLabel = "Search",
-    bool showClearButton = true,
+    bool showClearButton = false,
     bool autoFocus = false,
     String? popupTitle,
     Key? key,
@@ -48,7 +48,7 @@ class MultiSelectDropdownUtils {
     String? searchFieldPropsLabelText = "Search",
     FormFieldValidator? validator,
     bool showSearchBox = true,
-    bool showClearButton = true,
+    bool showClearButton = false,
     bool autoFocus = false,
     Key? key,
   }) {
@@ -95,7 +95,7 @@ class MultiSelectDropdownWithElevation<T> extends StatefulWidget {
     this.validator,
     this.showSearchBox = true,
     this.searchFieldLabel = "Search",
-    this.showClearButton = true,
+    this.showClearButton = false,
     this.autoFocus = false,
     this.popupTitle,
   }) : super(key: key);

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 class Constants {
   static String CLIENTNAME = 'CEO';
   static String APPNAME = 'Sterlite CSR';
-  static const appVersion = '1.0.1';
+  static const appVersion = '1.2.0';
 
   static Color primaryColor = Color.fromARGB(255, 8, 51, 68);
   static Color secondaryColor = Color.fromARGB(255, 6, 182, 212);
@@ -61,6 +61,8 @@ class Constants {
       'https://hr7qeioevi.execute-api.ap-south-1.amazonaws.com/prod';
   static String USER_URL =
       'https://gqogettv12.execute-api.ap-south-1.amazonaws.com/prod';
+  static String OPERATION_URL =
+      'https://rd4c6xnvc2.execute-api.ap-south-1.amazonaws.com/prod';
   static String BULK_URL =
       'https://4ussigez8l.execute-api.ap-south-1.amazonaws.com/prod';
   static String RESOURCE_URL =

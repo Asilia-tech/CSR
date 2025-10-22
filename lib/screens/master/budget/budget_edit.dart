@@ -2,24 +2,19 @@ import 'package:get/get.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:sterlite_csr/constants.dart';
-import 'package:sterlite_csr/models/financial_model.dart';
-import 'package:sterlite_csr/models/district_model.dart';
-import 'package:sterlite_csr/models/project_model.dart';
-import 'package:sterlite_csr/models/state_model.dart';
+import 'package:sterlite_csr/models/associate_model.dart';
+import 'package:sterlite_csr/utilities/function_utils.dart';
 import 'package:sterlite_csr/utilities/method_utils.dart';
 import 'package:sterlite_csr/utilities/widget_utils.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sterlite_csr/models/budget_model.dart';
 import 'package:sterlite_csr/utilities/api-service.dart';
-import 'package:sterlite_csr/utilities/function_utils.dart';
 import 'package:sterlite_csr/utilities/utils/radiobutton_utils.dart';
-import 'package:sterlite_csr/utilities/utils/search-dropdown_utils.dart';
-import 'package:sterlite_csr/screens/master/budget/budget_bulk.dart';
+import 'package:sterlite_csr/screens/master/associate_project/associate_project_list.dart';
 
 class EditBudget extends StatefulWidget {
-  final bool isEdit;
-  final BudgetModel? budget;
-  const EditBudget({super.key, this.isEdit = false, this.budget});
+  final AssociateModel? associate_project;
+  const EditBudget({super.key, required this.associate_project});
 
   @override
   _EditBudgetState createState() => _EditBudgetState();
@@ -37,28 +32,17 @@ class _EditBudgetState extends State<EditBudget> {
   Map<String, Map<String, TextEditingController>> controllers = {};
   Map<String, double> totals = {};
 
-  List<String> months = Constants.months;
+  List<String> months = [];
 
   List<String> defaultBudgets = [];
 
-  List<FinancialModel> financialOptions = [];
-  String selectedFinancial = '';
+  BudgetModel? budget_data;
+  AssociateModel? project_data;
 
-  String selectedState = "";
-  List<StateModel> stateOptions = [];
-
-  String selectedDistrict = "";
-  List<DistrictModel> districtOptions = [];
-
-  BudgetModel? data;
-
-  String selectedProject = "";
-  List<ProjectModel> projectOptions = [];
+  bool _isEdit = false;
 
   List<String> statusList = ['Active', 'Inactive'];
   String statusName = 'Active';
-
-  String selectedBudgetType = '';
 
   bool _isControllersInitialized = false;
   bool _isDataLoaded = false;
@@ -92,7 +76,7 @@ class _EditBudgetState extends State<EditBudget> {
       bool isDesktop = constraints.maxWidth > 600;
       return Scaffold(
         appBar: UtilsWidgets.buildAppBar(
-            widget.isEdit ? 'Edit Budget' : 'Add Budget', Get.isDarkMode,
+            _isEdit ? 'Edit Budget' : 'Add Budget', Get.isDarkMode,
             leading: Container(
               margin: const EdgeInsets.only(left: 15, bottom: 25),
               child: IconButton(
@@ -108,7 +92,7 @@ class _EditBudgetState extends State<EditBudget> {
                         Get.isDarkMode ? Colors.white : Constants.primaryColor),
                 onPressed: () => Navigator.of(context).push(
                   MaterialPageRoute(
-                    builder: (context) => const AddBulkBudget(),
+                    builder: (context) => const AssociateProjectList(),
                   ),
                 ),
                 label: Text('Add Bulk Budget',
@@ -131,66 +115,11 @@ class _EditBudgetState extends State<EditBudget> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          _buildOtherLayout(isDesktop),
-                          Row(
-                            children: [
-                              Flexible(
-                                child:
-                                    SearchDropdownUtils.buildSearchableDropdown(
-                                  items:
-                                      stateOptions.map((e) => e.name).toList(),
-                                  value: selectedState.isEmpty
-                                      ? null
-                                      : selectedState,
-                                  label: "State",
-                                  icon: Icons.map,
-                                  hint: "Select state",
-                                  onChanged: (value) {
-                                    if (value != null) {
-                                      setState(() {
-                                        selectedState = value;
-                                        selectedDistrict = "";
-                                      });
-                                      getDistrictInfo();
-                                    }
-                                  },
-                                  displayTextFn: (item) => item,
-                                  validator: (value) {
-                                    if (value == null || value.isEmpty) {
-                                      return "Please select a state";
-                                    }
-                                  },
-                                ),
-                              ),
-                              Flexible(
-                                child:
-                                    SearchDropdownUtils.buildSearchableDropdown(
-                                  items: districtOptions
-                                      .map((e) => e.name)
-                                      .toList(),
-                                  value: selectedDistrict.isEmpty
-                                      ? null
-                                      : selectedDistrict,
-                                  label: "District",
-                                  icon: Icons.location_city,
-                                  hint: "Select district",
-                                  onChanged: (value) {
-                                    if (value != null) {
-                                      setState(() {
-                                        selectedDistrict = value;
-                                      });
-                                    }
-                                  },
-                                  displayTextFn: (item) => item,
-                                  validator: (value) {
-                                    if (value == null || value.isEmpty) {
-                                      return "Please select a district";
-                                    }
-                                  },
-                                ),
-                              ),
-                            ],
-                          ),
+                          const SizedBox(height: 20),
+                          if (_isControllersInitialized &&
+                              defaultBudgets.isNotEmpty)
+                            _buildDataTable(),
+                          const SizedBox(height: 20),
                           RadioButtonUtils.buildRadioGroup<String>(
                             items: statusList,
                             selectedValue: statusName,
@@ -205,10 +134,6 @@ class _EditBudgetState extends State<EditBudget> {
                             horizontal: true,
                           ),
                           const SizedBox(height: 20),
-                          if (_isControllersInitialized &&
-                              defaultBudgets.isNotEmpty)
-                            _buildDataTable(),
-                          const SizedBox(height: 20),
                           Obx(() => apiController.isLoading.value
                               ? const Center(child: CircularProgressIndicator())
                               : Padding(
@@ -216,12 +141,31 @@ class _EditBudgetState extends State<EditBudget> {
                                       0, 16.0, 0, 16.0),
                                   child: UtilsWidgets.buildPrimaryBtn(
                                     context,
-                                    widget.isEdit
-                                        ? 'Update Budget'
-                                        : 'Add Budget',
+                                    _isEdit ? 'Update Budget' : 'Add Budget',
                                     () async {
+                                      // print(totals.values.fold<double>(
+                                      //     0.0,
+                                      //     (previousValue, element) =>
+                                      //         previousValue + element));
                                       if (_formKey.currentState!.validate()) {
-                                        await _submitForm();
+                                        if (totals.values.fold<double>(
+                                                0.0,
+                                                (previousValue, element) =>
+                                                    previousValue + element) ==
+                                            0) {
+                                          UtilsWidgets.showToastFunc(
+                                              'Total budget cannot be zero.');
+                                        } else if (totals.values.fold<double>(
+                                                0.0,
+                                                (previousValue, element) =>
+                                                    previousValue + element) >
+                                            int.parse(
+                                                project_data!.total_budget)) {
+                                          UtilsWidgets.showToastFunc(
+                                              'Entered budget cannot be more than total project budget.');
+                                        } else {
+                                          await _submitForm();
+                                        }
                                       }
                                     },
                                   ),
@@ -234,86 +178,6 @@ class _EditBudgetState extends State<EditBudget> {
               ),
       );
     });
-  }
-
-  Widget _buildOtherLayout(bool isDesktop) {
-    return Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: Column(
-        children: [
-          IntrinsicHeight(
-            child: Row(
-              children: [
-                if (!widget.isEdit) ...[
-                  const SizedBox(width: 12),
-                  Expanded(
-                    flex: 1,
-                    child: Container(
-                      constraints: const BoxConstraints(minHeight: 48.0),
-                      child:
-                          SearchDropdownUtils.buildSearchableDropdown<String>(
-                        items: financialOptions.map((e) => e.name).toList(),
-                        label: 'Financial Year',
-                        value: selectedFinancial.isEmpty
-                            ? null
-                            : selectedFinancial,
-                        icon: Icons.list,
-                        hint: 'Choose...',
-                        onChanged: (p0) async {
-                          setState(() {
-                            selectedFinancial = p0!;
-                          });
-                        },
-                        displayTextFn: (item) => item,
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return "Please select an financial year";
-                          }
-                        },
-                        showSearchBox: true,
-                      ),
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-          IntrinsicHeight(
-            child: Row(
-              children: [
-                Expanded(
-                  flex: 1,
-                  child: Container(
-                    constraints: const BoxConstraints(minHeight: 48.0),
-                    child: SearchDropdownUtils.buildSearchableDropdown<String>(
-                      items: projectOptions.map((e) => e.project_name).toList(),
-                      value: selectedProject,
-                      label: "Project Name",
-                      icon: Icons.list,
-                      hint: "Select project Name",
-                      onChanged: (value) {
-                        if (value != null) {
-                          setState(() {
-                            selectedProject = value;
-                          });
-                        }
-                      },
-                      displayTextFn: (item) => item,
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return "Please select a project name";
-                        }
-                      },
-                      showSearchBox: true,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
   }
 
   Widget _buildDataTable() {
@@ -426,21 +290,20 @@ class _EditBudgetState extends State<EditBudget> {
       setState(() {
         userId = prefs.getString('user_id') ?? '';
         userRole = prefs.getString('role') ?? '';
-
-        months = List.generate(12, (index) {
-          return Utils.formatDate(DateTime(2025, index + 1, 1), 'MMMM');
-        });
+        project_data = widget.associate_project;
       });
+      int total_milestones = int.parse(project_data!.milestone);
 
-      // Load all data sequentially
-      await Future.wait([
-        getStateInfo(),
-        getProjectInfo(),
-      ]);
+      String start_date = project_data!.start_date;
+      String end_date = project_data!.end_date;
 
-      if (widget.isEdit && widget.budget != null) {
-        await _populateEditData();
-      }
+      months = Utils.getMonthsInFinancialYear(start_date, end_date);
+
+      defaultBudgets =
+          List.generate(total_milestones, (index) => 'Milestone ${index + 1}');
+
+      await fetchBudgetInfo(
+          project_data!.associate_project_code, project_data!.financial_year);
 
       _initializeControllers();
     } catch (e) {
@@ -452,167 +315,29 @@ class _EditBudgetState extends State<EditBudget> {
     }
   }
 
-  Future<void> _populateEditData() async {
-    data = widget.budget;
-    budget_map = data!.budget_map;
-    statusName = data!.status ? 'Active' : 'Inactive';
-
-    selectedBudgetType = data!.name;
-
-    int total_milestones = int.parse(data!.milestone);
-
-    defaultBudgets =
-        List.generate(total_milestones, (index) => 'Milestone ${index + 1}');
-
-    if (stateOptions.isNotEmpty) {
-      try {
-        selectedState = stateOptions
-            .firstWhere((element) => element.state_code == data!.state_code)
-            .name;
-        await getDistrictInfo();
-
-        if (districtOptions.isNotEmpty) {
-          selectedDistrict = districtOptions
-              .firstWhere(
-                  (element) => element.district_code == data!.district_code)
-              .name;
-        }
-      } catch (e) {
-        UtilsWidgets.showToastFunc('Error setting state/district: $e');
-      }
-    }
-
-    if (projectOptions.isNotEmpty) {
-      try {
-        ProjectModel? foundCenter = projectOptions.firstWhere(
-            (element) => element.project_code == data!.project_code);
-        selectedProject = foundCenter.project_name;
-      } catch (e) {
-        UtilsWidgets.showToastFunc('Error setting project: $e');
-      }
-    }
-
-    if (financialOptions.isNotEmpty) {
-      try {
-        selectedFinancial = financialOptions
-            .firstWhere((element) =>
-                element.financial_year_code == data!.financial_year)
-            .name;
-      } catch (e) {
-        UtilsWidgets.showToastFunc('Error setting financial year: $e');
-      }
-    }
-  }
-
-  Future<void> getStateInfo() async {
+  Future fetchBudgetInfo(
+      String associate_project_code, String financial_year) async {
     try {
-      setState(() {
-        stateOptions.clear();
-      });
-
-      String uri = Constants.MASTER_URL + '/state';
-      Map params = {"action": "list"};
-      Map<String, dynamic> tempMap = await MethodUtils.apiCall(uri, params);
-
-      setState(() {
-        if (tempMap['isValid']) {
-          List tempList = tempMap['info'] ?? [];
-          for (var item in tempList) {
-            stateOptions.add(StateModel.fromJson(item));
-          }
-        } else {
-          String msg = tempMap['message'] ?? "Failed to load states";
-          UtilsWidgets.showToastFunc(msg);
-        }
-      });
-    } catch (e) {
-      UtilsWidgets.showToastFunc('Error loading states: ${e.toString()}');
-    }
-  }
-
-  Future<void> getDistrictInfo() async {
-    try {
-      setState(() {
-        districtOptions.clear();
-      });
-
-      if (selectedState.isEmpty) return;
-
-      String uri = Constants.MASTER_URL + '/district';
+      String uri = Constants.MASTER_URL + '/budget';
       Map params = {
-        "action": "list",
-        "state_code": stateOptions
-            .firstWhere((element) => element.name == selectedState)
-            .state_code,
+        "action": "get",
+        'associate_project_code': associate_project_code,
+        'financial_year': financial_year
       };
 
       Map<String, dynamic> tempMap = await MethodUtils.apiCall(uri, params);
 
       setState(() {
-        if (tempMap['isValid']) {
-          List tempList = tempMap['info'] ?? [];
-          for (var item in tempList) {
-            districtOptions.add(DistrictModel.fromJson(item));
-          }
+        _isEdit = tempMap['isValid'];
+        if (_isEdit) {
+          budget_data = BudgetModel.fromJson(tempMap['info']);
+          budget_map = budget_data!.budget_map;
+          statusName = budget_data!.status ? 'Active' : 'Inactive';
         } else {
-          String msg = tempMap['message'] ?? "Failed to load cities";
+          String msg = tempMap['message'] ?? "Failed to load budget data";
           UtilsWidgets.showToastFunc(msg);
         }
       });
-    } catch (e) {
-      UtilsWidgets.showToastFunc('Error loading cities: ${e.toString()}');
-    }
-  }
-
-  Future<void> getFinancialInfo() async {
-    try {
-      setState(() {
-        financialOptions.clear();
-      });
-
-      String uri = Constants.MASTER_URL + '/financial-year';
-      Map params = {"action": "list"};
-
-      Map<String, dynamic> tempMap = await MethodUtils.apiCall(uri, params);
-
-      bool isFind = tempMap['isValid'] ?? false;
-
-      if (isFind) {
-        setState(() {
-          List tempList = tempMap['info'] ?? [];
-          for (var item in tempList) {
-            financialOptions.add(FinancialModel.fromJson(item));
-          }
-        });
-      } else {
-        String msg = tempMap['message'] ?? 'Failed to load financial years';
-        UtilsWidgets.showToastFunc(msg);
-      }
-    } catch (e) {
-      UtilsWidgets.showToastFunc(
-          'Error loading financial years: ${e.toString()}');
-    }
-  }
-
-  Future<void> getProjectInfo() async {
-    setState(() {
-      projectOptions.clear();
-    });
-    try {
-      String uri = Constants.MASTER_URL + '/associate-project';
-      Map params = {"action": "list"};
-      Map tempMap = await MethodUtils.apiCall(uri, params);
-      if (tempMap['isValid']) {
-        setState(() {
-          List tempList = tempMap['info'];
-          for (var item in tempList) {
-            projectOptions.add(ProjectModel.fromJson(item));
-          }
-        });
-      } else {
-        String msg = tempMap['message'] ?? "Failed to load centers";
-        UtilsWidgets.showToastFunc(msg);
-      }
     } catch (e) {
       UtilsWidgets.showToastFunc(e.toString());
     }
@@ -631,7 +356,7 @@ class _EditBudgetState extends State<EditBudget> {
       for (var budgetKey in defaultBudgets) {
         controllers[month]![budgetKey] = TextEditingController();
 
-        if (widget.isEdit && data != null && budget_map.isNotEmpty) {
+        if (budget_map.isNotEmpty) {
           String value = _getExistingValue(month, budgetKey);
           controllers[month]![budgetKey]!.text = value;
         }
@@ -700,29 +425,19 @@ class _EditBudgetState extends State<EditBudget> {
       String uri = Constants.MASTER_URL + '/budget';
       Map params = {
         "user_id": userId,
-        "action": widget.isEdit ? "update" : "add",
-        "name": selectedBudgetType,
-        "state_code": stateOptions
-            .firstWhere((element) => element.name == selectedState)
-            .state_code,
-        "district_code": districtOptions
-            .firstWhere((element) => element.name == selectedDistrict)
-            .district_code,
+        "action": _isEdit ? "update" : "add",
         "budget_map": budgetData,
         "status": statusName == 'Active',
-        'project_code': projectOptions
-            .firstWhere((element) => element.project_name == selectedProject)
-            .project_code,
+        'associate_project_code': project_data!.associate_project_code,
+        'project_code': project_data!.project_code,
+        // 'consume_budget': totals.values
+        //     .fold<double>(
+        //         0.0, (previousValue, element) => previousValue + element)
+        //     .toString(),
+        'total_budget': project_data!.total_budget,
+        'financial_year': project_data!.financial_year,
+        'milestone': defaultBudgets.length.toString(),
       };
-
-      if (widget.isEdit && data != null) {
-        params['budget_code'] = data!.budget_code;
-        params['financial_year'] = data!.financial_year;
-      } else {
-        params["financial_year"] = financialOptions
-            .firstWhere((element) => element.name == selectedFinancial)
-            .financial_year_code;
-      }
 
       Map<String, dynamic> tempMap = await apiController.fetchData(uri, params);
 
@@ -730,9 +445,8 @@ class _EditBudgetState extends State<EditBudget> {
       if (isFind) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-              content: Text(widget.isEdit
-                  ? 'Budget Updated Successfully!'
-                  : 'Budget Added Successfully!')),
+              content: Text(
+                  'Budget ${_isEdit ? "Updated" : "Added"} Successfully!')),
         );
         Get.back(result: true);
       } else {

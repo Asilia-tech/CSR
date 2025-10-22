@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:sterlite_csr/utilities/function_utils.dart';
 import 'package:sterlite_csr/utilities/report_utils.dart';
 import 'package:sterlite_csr/utilities/widget_utils.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
@@ -208,7 +209,7 @@ class _BeneficiaryPageState extends State<BeneficiaryPage> {
 
       _processAndSetState(apiResponse);
     } catch (e) {
-      print("An error occurred: $e");
+      UtilsWidgets.showToastFunc("An error occurred: $e");
     } finally {
       setState(() {
         _isLoading = false;

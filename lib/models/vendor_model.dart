@@ -4,12 +4,13 @@ class VendorModel {
   final String contact_person;
   final String email_id;
   final String mobile;
+  final String password;
   final String type;
   final String role;
   final Map<String, dynamic> access_control;
   final String state_code;
-  final String village_code;
   final String district_code;
+  final String village_code;
   final String project_code;
   final String associate_project_code;
   final bool status;
@@ -21,6 +22,7 @@ class VendorModel {
     required this.contact_person,
     required this.email_id,
     required this.mobile,
+    required this.password,
     required this.type,
     required this.role,
     required this.access_control,
@@ -47,6 +49,7 @@ class VendorModel {
       status: json['status'] ?? false,
       associate_project_code: json['associate_project_code'] ?? '',
       project_code: json['project_code'] ?? '',
+      password: json['password'] ?? '',
     );
   }
 

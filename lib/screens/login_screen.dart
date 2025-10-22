@@ -2,7 +2,6 @@ import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sterlite_csr/constants.dart';
-import 'package:sterlite_csr/screens/home_screen.dart';
 import 'package:sterlite_csr/utilities/api-service.dart';
 import 'package:sterlite_csr/utilities/function_utils.dart';
 import 'package:sterlite_csr/utilities/widget_utils.dart';
@@ -186,9 +185,9 @@ class _LoginPageState extends State<LoginPage> {
                                             child: Card(
                                               elevation: 10,
                                               shape: RoundedRectangleBorder(
-                                                borderRadius:
-                                                    BorderRadius.circular(25),
-                                              ),
+                                                  borderRadius:
+                                                      BorderRadius.circular(
+                                                          25)),
                                               child: ElevatedButton(
                                                 onPressed: () async {
                                                   if (_formKey.currentState!
@@ -286,10 +285,12 @@ class _LoginPageState extends State<LoginPage> {
         prefs.setString('email_id', info['email_id']);
         Utils.storeMapInPrefs(info['access_control'], "access_control");
 
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const HomePage()),
-        );
+        Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
+
+        // Navigator.pushReplacement(
+        //   context,
+        //   MaterialPageRoute(builder: (context) => const HomePage()),
+        // );
       } else {
         UtilsWidgets.showGetDialog(context,
             verifyMap['message'] ?? "Login Failed", Constants.redColor);

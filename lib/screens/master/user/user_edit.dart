@@ -60,7 +60,6 @@ class _EditUserState extends State<EditUser> {
       _mobileController.text = data!.mobile;
       _passwordController.text = data!.password;
       serviceMap = data!.access_control;
-
       statusName = data!.status ? 'Active' : 'Inactive';
     }
     tempServiceMap = Map.from(serviceMap);

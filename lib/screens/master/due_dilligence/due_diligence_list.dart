@@ -4,6 +4,7 @@ import 'package:sterlite_csr/constants.dart';
 import 'package:sterlite_csr/models/associate_model.dart';
 import 'package:sterlite_csr/models/due_diligence_model.dart';
 import 'package:sterlite_csr/models/project_model.dart';
+import 'package:sterlite_csr/screens/master/due_dilligence/due_diligence_edit.dart';
 import 'package:sterlite_csr/utilities/api-service.dart';
 import 'package:sterlite_csr/utilities/function_utils.dart';
 import 'package:sterlite_csr/utilities/method_utils.dart';
@@ -11,7 +12,6 @@ import 'package:sterlite_csr/utilities/widget_utils.dart';
 import 'package:sterlite_csr/utilities/widget_decoration.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sterlite_csr/utilities/utils/search-dropdown_utils.dart';
-import 'package:sterlite_csr/screens/master/due_dilligence/due_diligence_edit.dart';
 
 class DueDiligenceList extends StatefulWidget {
   const DueDiligenceList({super.key});
@@ -386,7 +386,7 @@ class _DueDiligenceListState extends State<DueDiligenceList> {
       associateOptions.clear();
     });
     try {
-      String uri = Constants.MASTER_URL + '/associate-project';
+      String uri = Constants.OPERATION_URL + '/associate-project';
       Map params = {
         "action": "list",
         "project_code": projectOptions
@@ -416,7 +416,7 @@ class _DueDiligenceListState extends State<DueDiligenceList> {
       _duediligences.clear();
     });
     try {
-      String uri = Constants.MASTER_URL + '/due-diligence';
+      String uri = Constants.MASTER_URL + '/duediligence';
       Map params = {
         "action": "list",
         "project_code": projectOptions
@@ -427,11 +427,13 @@ class _DueDiligenceListState extends State<DueDiligenceList> {
                 element.associate_project_name == selectedAssociate)
             .associate_project_code,
       };
+      print(params);
       Map<String, dynamic> tempMap = await apiController.fetchData(uri, params);
+      print(tempMap);
       setState(() {
         isFind = tempMap['isValid'];
         if (isFind) {
-          List tempList = tempMap['info'];
+          List tempList = tempMap['info']['due_diligences'];
           for (var item in tempList) {
             _duediligences.add(DueDiligenceModel.fromJson(item));
           }
@@ -449,7 +451,7 @@ class _DueDiligenceListState extends State<DueDiligenceList> {
 
   Future fetchDueDiligenceProjectInfo(String duediligence_code) async {
     try {
-      String uri = Constants.MASTER_URL + '/due-diligence';
+      String uri = Constants.MASTER_URL + '/duediligence';
       Map params = {"action": "get", 'duediligence_code': duediligence_code};
 
       Map<String, dynamic> tempMap = await MethodUtils.apiCall(uri, params);

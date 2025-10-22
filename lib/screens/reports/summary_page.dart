@@ -115,7 +115,7 @@ class _SummaryPageState extends State<SummaryPage> {
 
       _processAndSetState(apiResponse);
     } catch (e) {
-      print("An error occurred: $e");
+      UtilsWidgets.showToastFunc("An error occurred: $e");
     } finally {
       setState(() {
         _isLoading = false;

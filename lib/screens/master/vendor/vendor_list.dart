@@ -1,9 +1,9 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:sterlite_csr/constants.dart';
-import 'package:sterlite_csr/models/district_model.dart';
+import 'package:sterlite_csr/models/associate_model.dart';
+import 'package:sterlite_csr/models/project_model.dart';
 import 'package:sterlite_csr/models/vendor_model.dart';
-import 'package:sterlite_csr/models/state_model.dart';
 import 'package:sterlite_csr/utilities/api-service.dart';
 import 'package:sterlite_csr/utilities/function_utils.dart';
 import 'package:sterlite_csr/utilities/method_utils.dart';
@@ -26,10 +26,12 @@ class _VendorListState extends State<VendorList> {
   String msg = 'Please wait...';
   String userRole = "";
 
-  String selectedState = "";
-  List<StateModel> stateOptions = [];
-  String selectedDistrict = "";
-  List<DistrictModel> districtOptions = [];
+  String selectedProject = "";
+  List<ProjectModel> projectOptions = [];
+
+  String selectedAssociatedProject = "";
+  List<AssociateModel> associatedProjectOptions = [];
+
   final TextEditingController _searchController = TextEditingController();
   List<VendorModel> _vendors = [];
   List<VendorModel> _filteredvendor = [];
@@ -171,56 +173,49 @@ class _VendorListState extends State<VendorList> {
               children: [
                 Flexible(
                   child: SearchDropdownUtils.buildSearchableDropdown(
-                    items: stateOptions.map((state) => state.name).toList(),
-                    value: selectedState,
-                    label: "State",
+                    items: projectOptions.map((e) => e.project_name).toList(),
+                    value: selectedProject,
+                    label: "Project",
                     icon: Icons.map,
-                    hint: "Select state",
+                    hint: "Select project",
                     onChanged: (value) async {
                       if (value != null) {
                         setState(() {
-                          selectedState = value;
-                          selectedDistrict = '';
-                          districtOptions.clear();
+                          selectedProject = value;
                         });
+                        await getAssociatedProjectInfo();
                       }
-                      await getDistrictInfo();
                     },
                     displayTextFn: (item) => item,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
-                        return "Please select a state";
+                        return "Please select a project";
                       }
-                      return null;
                     },
                   ),
                 ),
-                SizedBox(width: 16),
                 Flexible(
-                  child: SearchDropdownUtils.buildSearchableDropdown<String>(
-                    items: districtOptions
-                        .map((District) => District.name)
+                  child: SearchDropdownUtils.buildSearchableDropdown(
+                    items: associatedProjectOptions
+                        .map((e) => e.associate_project_name)
                         .toList(),
-                    value: selectedDistrict,
-                    label: "District",
-                    icon: Icons.location_city,
-                    hint: "Select District",
+                    value: selectedAssociatedProject,
+                    label: "Associated Project",
+                    icon: Icons.map,
+                    hint: "Select associated project",
                     onChanged: (value) async {
                       if (value != null) {
                         setState(() {
-                          selectedDistrict = value;
-                          _vendors.clear();
-                          _filteredvendor.clear();
+                          selectedAssociatedProject = value;
                         });
+                        await getVendorInfo();
                       }
-                      await getVendorInfo();
                     },
                     displayTextFn: (item) => item,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
-                        return "Please select a state";
+                        return "Please select a associated project";
                       }
-                      return null;
                     },
                   ),
                 ),
@@ -349,64 +344,63 @@ class _VendorListState extends State<VendorList> {
     setState(() {
       userRole = prefs.getString('role') ?? '';
     });
-    await getStateInfo();
+    await getProjectInfo();
   }
 
-  Future getStateInfo() async {
+  Future getProjectInfo() async {
     setState(() {
-      stateOptions.clear();
+      projectOptions.clear();
     });
     try {
-      String uri = Constants.MASTER_URL + '/state';
+      String uri = Constants.MASTER_URL + '/main-project';
       Map params = {"action": "list"};
+
       Map tempMap = await MethodUtils.apiCall(uri, params);
-      setState(() {
-        isFind = tempMap['isValid'];
-        if (isFind) {
+      if (tempMap['isValid']) {
+        setState(() {
           List tempList = tempMap['info'];
+          msg = tempMap['message'] ?? "choose project to continue";
           for (var item in tempList) {
-            stateOptions.add(StateModel.fromJson(item));
+            projectOptions.add(ProjectModel.fromJson(item));
           }
-          msg = 'Select a state and District to view vendors';
-        } else {
-          msg = tempMap['message'];
-        }
-      });
+        });
+      } else {
+        String msg = tempMap['message'] ?? "Failed to load projects";
+        UtilsWidgets.showToastFunc(msg);
+      }
     } catch (e) {
       UtilsWidgets.showToastFunc(e.toString());
     }
   }
 
-  Future getDistrictInfo() async {
+  Future getAssociatedProjectInfo() async {
     setState(() {
-      districtOptions.clear();
+      associatedProjectOptions.clear();
     });
     try {
-      String uri = Constants.MASTER_URL + '/district';
+      String uri = Constants.OPERATION_URL + '/associate-project';
       Map params = {
         "action": "list",
-        "state_code": stateOptions
-            .firstWhere((element) => element.name == selectedState)
-            .state_code,
+        "project_code": projectOptions
+            .firstWhere((element) => element.project_name == selectedProject)
+            .project_code,
       };
+
       Map tempMap = await MethodUtils.apiCall(uri, params);
-      setState(() {
-        isFind = tempMap['isValid'];
-        if (isFind) {
+      if (tempMap['isValid']) {
+        setState(() {
           List tempList = tempMap['info'];
+          msg = tempMap['message'] ?? "choose associate project to continue";
           for (var item in tempList) {
-            districtOptions.add(DistrictModel.fromJson(item));
+            associatedProjectOptions.add(AssociateModel.fromJson(item));
           }
-          msg = 'Select a District to view vendors';
-        } else {
-          msg = tempMap['message'];
-        }
-      });
+        });
+      } else {
+        String msg = tempMap['message'] ?? "Failed to load cities";
+        UtilsWidgets.showToastFunc(msg);
+      }
     } catch (e) {
-      setState(() {
-        isFind = false;
-        msg = e.toString();
-      });
+      UtilsWidgets.showToastFunc(e.toString());
     }
   }
 
@@ -418,13 +412,15 @@ class _VendorListState extends State<VendorList> {
       String uri = Constants.MASTER_URL + '/vendor';
       Map params = {
         "action": "list",
-        "state_code": stateOptions
-            .firstWhere((element) => element.name == selectedState)
-            .state_code,
-        "district_code": districtOptions
-            .firstWhere((element) => element.name == selectedDistrict)
-            .district_code,
+        "project_code": projectOptions
+            .firstWhere((element) => element.project_name == selectedProject)
+            .project_code,
+        "associate_project_code": associatedProjectOptions
+            .firstWhere((element) =>
+                element.associate_project_name == selectedAssociatedProject)
+            .associate_project_code,
       };
+
       Map<String, dynamic> tempMap = await apiController.fetchData(uri, params);
       setState(() {
         isFind = tempMap['isValid'];
@@ -437,7 +433,7 @@ class _VendorListState extends State<VendorList> {
           _searchController.addListener(_onDesktopSearchChanged);
           _searchController.addListener(_onMobileSearchChanged);
         } else {
-          msg = tempMap['message'];
+          msg = tempMap['message'] ?? 'Failed to load vendor data';
         }
       });
     } catch (e) {

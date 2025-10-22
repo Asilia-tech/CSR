@@ -6,6 +6,7 @@ import 'package:sterlite_csr/models/district_model.dart';
 import 'package:sterlite_csr/models/financial_model.dart';
 import 'package:sterlite_csr/models/project_model.dart';
 import 'package:sterlite_csr/models/state_model.dart';
+import 'package:sterlite_csr/models/user_model.dart';
 import 'package:sterlite_csr/models/village_model.dart';
 import 'package:sterlite_csr/utilities/api-service.dart';
 import 'package:sterlite_csr/utilities/function_utils.dart';
@@ -32,7 +33,6 @@ class EditAssociate extends StatefulWidget {
 class _EditAssociateState extends State<EditAssociate> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _contactpController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _mobileController = TextEditingController();
   final TextEditingController _startdateController =
@@ -69,6 +69,12 @@ class _EditAssociateState extends State<EditAssociate> {
   String selectedProject = "";
   List<ProjectModel> projectOptions = [];
 
+  String selectedUser = "";
+  List<UserModel> userOptions = [];
+
+  List<Map<String, dynamic>> locationList = [];
+  Map<String, List<String>> tempLocation = {};
+
   List<String> selectedState = [];
   List<StateModel> stateOptions = [];
 
@@ -88,9 +94,19 @@ class _EditAssociateState extends State<EditAssociate> {
     if (widget.isEdit && widget.associate_project != null) {
       data = widget.associate_project;
       _nameController.text = data!.associate_project_name;
-      _contactpController.text = data!.contact_person;
       _emailController.text = data!.email_id;
       _mobileController.text = data!.mobile;
+      selectedProject = data!.project_name;
+      _startdateController.text = data!.start_date;
+      _enddateController.text = data!.end_date;
+      _ENFAIDController.text = data!.ENFAID;
+      _budgetController.text = data!.total_budget;
+      _milestoneController.text = data!.milestone;
+      entityName = data!.entity;
+      focusAreaName = data!.focus_area;
+      sourceName = data!.budget_source;
+      locationList = data!.location;
+      tempLocation = extractSelectedLocations(locationList);
       statusName = data!.status ? 'Active' : 'Inactive';
     }
   }
@@ -291,16 +307,27 @@ class _EditAssociateState extends State<EditAssociate> {
                                   ),
                                 ),
                                 Flexible(
-                                  child: TextFiledUtils.buildTextField(
-                                    controller: _contactpController,
-                                    label: 'Local CSR',
-                                    hint: 'Enter local CSR ',
-                                    icon: Icons.person,
+                                  child: SearchDropdownUtils
+                                      .buildSearchableDropdown(
+                                    items: userOptions
+                                        .map((e) => e.user_name)
+                                        .toList(),
+                                    value: selectedUser,
+                                    label: "User",
+                                    icon: Icons.map,
+                                    hint: "Select user",
+                                    onChanged: (value) async {
+                                      if (value != null) {
+                                        setState(() {
+                                          selectedUser = value;
+                                        });
+                                      }
+                                    },
+                                    displayTextFn: (item) => item,
                                     validator: (value) {
                                       if (value == null || value.isEmpty) {
-                                        return 'Please enter local CSR';
+                                        return "Please select a user";
                                       }
-                                      return null;
                                     },
                                   ),
                                 ),
@@ -333,7 +360,6 @@ class _EditAssociateState extends State<EditAssociate> {
                                       if (value == null || value.isEmpty) {
                                         return "Please select a project";
                                       }
-                                      return null;
                                     },
                                   ),
                                 ),
@@ -343,14 +369,46 @@ class _EditAssociateState extends State<EditAssociate> {
                                     items: stateOptions
                                         .map((e) => e.name)
                                         .toList(),
-                                    selectedItems: selectedState.cast<String>(),
+                                    selectedItems: selectedState,
                                     label: "Choose state",
                                     icon: Icons.list,
                                     onChanged: (selected) async {
                                       setState(() {
+                                        List<String> removedStates =
+                                            selectedState
+                                                .where((state) =>
+                                                    !selected.contains(state))
+                                                .toList();
+
+                                        // Get state codes of removed states
+                                        List<String> removedStateCodes =
+                                            stateOptions
+                                                .where((state) => removedStates
+                                                    .contains(state.name))
+                                                .map(
+                                                    (state) => state.state_code)
+                                                .toList();
+
+                                        // Remove districts belonging to removed states
+                                        selectedDistrict
+                                            .removeWhere((districtName) {
+                                          var district =
+                                              districtOptions.firstWhere((d) =>
+                                                  d.name == districtName);
+                                          return removedStateCodes
+                                              .contains(district.state_code);
+                                        });
+
+                                        selectedVillage
+                                            .removeWhere((villageName) {
+                                          var village =
+                                              villageOptions.firstWhere(
+                                                  (v) => v.name == villageName);
+                                          return removedStateCodes
+                                              .contains(village.state_code);
+                                        });
+
                                         selectedState = selected;
-                                        selectedDistrict = [];
-                                        selectedVillage = [];
                                       });
                                       await getDistrictInfo();
                                     },
@@ -360,7 +418,6 @@ class _EditAssociateState extends State<EditAssociate> {
                                       if (value.isEmpty) {
                                         return 'Please choose state';
                                       }
-                                      return null;
                                     },
                                   ),
                                 ),
@@ -374,14 +431,37 @@ class _EditAssociateState extends State<EditAssociate> {
                                     items: districtOptions
                                         .map((e) => e.name)
                                         .toList(),
-                                    selectedItems:
-                                        selectedDistrict.cast<String>(),
+                                    selectedItems: selectedDistrict,
                                     label: "Choose district",
                                     icon: Icons.list,
                                     onChanged: (selected) async {
                                       setState(() {
+                                        List<String> removedDistricts =
+                                            selectedDistrict
+                                                .where((district) => !selected
+                                                    .contains(district))
+                                                .toList();
+
+                                        // Get district codes of removed districts
+                                        List<String> removedDistrictCodes =
+                                            districtOptions
+                                                .where((district) =>
+                                                    removedDistricts.contains(
+                                                        district.name))
+                                                .map((district) =>
+                                                    district.district_code)
+                                                .toList();
+
+                                        // Remove villages belonging to removed districts
+                                        selectedVillage
+                                            .removeWhere((villageName) {
+                                          var village =
+                                              villageOptions.firstWhere(
+                                                  (v) => v.name == villageName);
+                                          return removedDistrictCodes
+                                              .contains(village.district_code);
+                                        });
                                         selectedDistrict = selected;
-                                        selectedVillage = [];
                                       });
                                       await getVillageInfo();
                                     },
@@ -391,7 +471,6 @@ class _EditAssociateState extends State<EditAssociate> {
                                       if (value.isEmpty) {
                                         return 'Please choose district';
                                       }
-                                      return null;
                                     },
                                   ),
                                 ),
@@ -401,8 +480,7 @@ class _EditAssociateState extends State<EditAssociate> {
                                     items: villageOptions
                                         .map((e) => e.name)
                                         .toList(),
-                                    selectedItems:
-                                        selectedVillage.cast<String>(),
+                                    selectedItems: selectedVillage,
                                     label: "Choose village",
                                     icon: Icons.list,
                                     onChanged: (selected) async {
@@ -416,7 +494,6 @@ class _EditAssociateState extends State<EditAssociate> {
                                       if (value.isEmpty) {
                                         return 'Please choose village';
                                       }
-                                      return null;
                                     },
                                   ),
                                 ),
@@ -480,6 +557,16 @@ class _EditAssociateState extends State<EditAssociate> {
                                             ? 'Edit Associate Project'
                                             : 'Add Associate Project',
                                         () async {
+                                      locationList =
+                                          convertToNestedLocationFormat(
+                                        stateOptions,
+                                        districtOptions,
+                                        villageOptions,
+                                        selectedState,
+                                        selectedDistrict,
+                                        selectedVillage,
+                                      );
+
                                       if (_formKey.currentState!.validate()) {
                                         await _submitForm();
                                       }
@@ -504,11 +591,39 @@ class _EditAssociateState extends State<EditAssociate> {
       userRole = prefs.getString('role') ?? '';
     });
     await getProjectInfo();
-    await getStateInfo();
+    await getLocalCSRInfo();
     await getFinancialInfo();
+    await getStateInfo();
     if (widget.isEdit && data != null) {
       await getDistrictInfo();
       await getVillageInfo();
+    }
+  }
+
+  Future getLocalCSRInfo() async {
+    setState(() {
+      userOptions.clear();
+    });
+    try {
+      String uri = Constants.USER_URL + '/user';
+      Map params = {"action": "list", 'role': 'Local CSR SPOC'};
+
+      Map tempMap = await MethodUtils.apiCall(uri, params);
+      if (tempMap['isValid']) {
+        setState(() {
+          List tempList = tempMap['info'];
+          for (var item in tempList) {
+            userOptions.add(UserModel.fromJson(item));
+          }
+          if (widget.isEdit && data!.local_csr_id != '') {
+            selectedUser = userOptions
+                .firstWhere((element) => element.user_id == data!.local_csr_id)
+                .user_name;
+          }
+        });
+      }
+    } catch (e) {
+      UtilsWidgets.showToastFunc(e.toString());
     }
   }
 
@@ -517,7 +632,7 @@ class _EditAssociateState extends State<EditAssociate> {
       projectOptions.clear();
     });
     try {
-      String uri = Constants.MASTER_URL + '/project';
+      String uri = Constants.MASTER_URL + '/main-project';
       Map params = {"action": "list"};
 
       Map tempMap = await MethodUtils.apiCall(uri, params);
@@ -551,7 +666,7 @@ class _EditAssociateState extends State<EditAssociate> {
       yearOptions.clear();
     });
     try {
-      String uri = Constants.MASTER_URL + '/financial_year';
+      String uri = Constants.MASTER_URL + '/financial-year';
       Map params = {"action": "list"};
 
       Map tempMap = await MethodUtils.apiCall(uri, params);
@@ -560,6 +675,11 @@ class _EditAssociateState extends State<EditAssociate> {
           List tempList = tempMap['info'];
           for (var item in tempList) {
             yearOptions.add(FinancialModel.fromJson(item));
+          }
+          if (widget.isEdit && data!.financial_year != '') {
+            selectedYear = yearOptions
+                .firstWhere((element) => element.name == data!.financial_year)
+                .name;
           }
         });
       } else {
@@ -586,11 +706,8 @@ class _EditAssociateState extends State<EditAssociate> {
           for (var item in tempList) {
             stateOptions.add(StateModel.fromJson(item));
           }
-          if (widget.isEdit && data!.state_code != []) {
-            selectedState = stateOptions
-                .where((state) => data!.state_code.contains(state.state_code))
-                .map((state) => state.name)
-                .toList();
+          if (widget.isEdit && data!.location != []) {
+            selectedState = tempLocation['selectedState']!;
           }
         });
       }
@@ -620,12 +737,8 @@ class _EditAssociateState extends State<EditAssociate> {
           for (var item in tempList) {
             districtOptions.add(DistrictModel.fromJson(item));
           }
-          if (widget.isEdit && data!.district_code != []) {
-            selectedDistrict = districtOptions
-                .where((district) =>
-                    data!.district_code.contains(district.district_code))
-                .map((district) => district.name)
-                .toList();
+          if (widget.isEdit && data!.location != []) {
+            selectedDistrict = tempLocation['selectedDistrict']!;
           }
         });
       } else {
@@ -662,12 +775,8 @@ class _EditAssociateState extends State<EditAssociate> {
           for (var item in tempList) {
             villageOptions.add(VillageModel.fromJson(item));
           }
-          if (widget.isEdit && data!.village_code != []) {
-            selectedVillage = villageOptions
-                .where((village) =>
-                    data!.village_code.contains(village.village_code))
-                .map((village) => village.name)
-                .toList();
+          if (widget.isEdit && data!.location != []) {
+            selectedVillage = tempLocation['selectedVillage']!;
           }
         });
       } else {
@@ -679,28 +788,102 @@ class _EditAssociateState extends State<EditAssociate> {
     }
   }
 
+  Map<String, List<String>> extractSelectedLocations(
+      List<Map<String, dynamic>> locationList) {
+    List<String> selectedState = [];
+    List<String> selectedDistrict = [];
+    List<String> selectedVillage = [];
+
+    for (var state in locationList) {
+      selectedState.add(state['state_name'] as String);
+
+      for (var district in state['districts'] as List<dynamic>) {
+        selectedDistrict.add(district['district_name'] as String);
+
+        for (var village in district['villages'] as List<dynamic>) {
+          selectedVillage.add(village['village_name'] as String);
+        }
+      }
+    }
+
+    return {
+      'selectedState': selectedState,
+      'selectedDistrict': selectedDistrict,
+      'selectedVillage': selectedVillage,
+    };
+  }
+
+  List<Map<String, dynamic>> convertToNestedLocationFormat(
+    List<StateModel> stateOptions,
+    List<DistrictModel> districtOptions,
+    List<VillageModel> villageOptions,
+    List<String> selectedState,
+    List<String> selectedDistrict,
+    List<String> selectedVillage,
+  ) {
+    final selectedStates = stateOptions
+        .where((state) => selectedState.contains(state.name))
+        .toList();
+
+    List<Map<String, dynamic>> location = selectedStates.map((state) {
+      final stateDistricts = districtOptions
+          .where((district) =>
+              selectedDistrict.contains(district.name) &&
+              district.state_code == state.state_code)
+          .toList();
+
+      final districts = stateDistricts.map((district) {
+        final districtVillages = villageOptions
+            .where((village) =>
+                selectedVillage.contains(village.name) &&
+                village.district_code == district.district_code)
+            .map((village) => {
+                  'village_id': village.village_code,
+                  'village_name': village.name,
+                })
+            .toList();
+
+        return {
+          'district_id': district.district_code,
+          'district_name': district.name,
+          'villages': districtVillages,
+        };
+      }).toList();
+
+      return {
+        'state_id': state.state_code,
+        'state_name': state.name,
+        'districts': districts,
+      };
+    }).toList();
+
+    return location;
+  }
+
   Future _submitForm() async {
     try {
       String startD = Utils.formatDate(
           DateTime.parse(_startdateController.text), 'yyyy-MM-dd');
       String endD = Utils.formatDate(
           DateTime.parse(_enddateController.text), 'yyyy-MM-dd');
-      String uri = Constants.MASTER_URL + '/associate_project';
+
+      String uri = Constants.OPERATION_URL + '/associate-project';
       Map params = {
         "user_id": userId,
         "action": widget.isEdit ? "update" : "add",
-        "state_code": stateOptions
-            .where((state) => selectedState.contains(state.name))
-            .map((state) => state.state_code)
-            .toList(),
-        "district_code": districtOptions
-            .where((district) => selectedDistrict.contains(district.name))
-            .map((district) => district.district_code)
-            .toList(),
-        "village_code": villageOptions
-            .where((village) => selectedDistrict.contains(village.name))
-            .map((village) => village.village_code)
-            .toList(),
+        // "state_code": stateOptions
+        //     .where((state) => selectedState.contains(state.name))
+        //     .map((state) => state.state_code)
+        //     .toList(),
+        // "district_code": districtOptions
+        //     .where((district) => selectedDistrict.contains(district.name))
+        //     .map((district) => district.district_code)
+        //     .toList(),
+        // "village_code": villageOptions
+        //     .where((village) => selectedVillage.contains(village.name))
+        //     .map((village) => village.village_code)
+        //     .toList(),
+        "location": locationList,
         "financial_year": selectedYear,
         "project_code": projectOptions
             .firstWhere((element) => element.project_name == selectedProject)
@@ -716,13 +899,17 @@ class _EditAssociateState extends State<EditAssociate> {
         "budget_source": sourceName,
         "focus_area": focusAreaName,
         "status": statusName == 'Active',
-        "contact_person": _contactpController.text.trim(),
+        "local_csr_name": selectedUser,
+        "local_csr_id": userOptions
+            .firstWhere((element) => element.user_name == selectedUser)
+            .user_id,
         "mobile": _mobileController.text.trim(),
         "email_id": _emailController.text.trim().toLowerCase(),
       };
       if (widget.isEdit) {
         params['associate_project_code'] = data!.associate_project_code;
       }
+
       Map<String, dynamic> tempMap = await apiController.fetchData(uri, params);
       setState(() {
         bool isFind = tempMap['isValid'];
@@ -748,6 +935,13 @@ class _EditAssociateState extends State<EditAssociate> {
   @override
   void dispose() {
     _nameController.dispose();
+    _startdateController.dispose();
+    _enddateController.dispose();
+    _budgetController.dispose();
+    _milestoneController.dispose();
+    _ENFAIDController.dispose();
+    _emailController.dispose();
+    _mobileController.dispose();
     super.dispose();
   }
 }

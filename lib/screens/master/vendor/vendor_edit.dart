@@ -31,6 +31,7 @@ class _EditVendorState extends State<EditVendor> {
   final TextEditingController _contactpController = TextEditingController();
   final TextEditingController _email_idController = TextEditingController();
   final TextEditingController _mobileController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
 
   VendorModel? data;
 
@@ -69,8 +70,8 @@ class _EditVendorState extends State<EditVendor> {
       _contactpController.text = data!.contact_person;
       _email_idController.text = data!.email_id;
       _mobileController.text = data!.mobile;
+      _passwordController.text = data!.password;
       typeName = data!.type;
-
       statusName = data!.status ? 'Active' : 'Inactive';
     }
   }
@@ -311,18 +312,38 @@ class _EditVendorState extends State<EditVendor> {
                                 ),
                               ],
                             ),
-                            RadioButtonUtils.buildRadioGroup<String>(
-                              items: statusList,
-                              selectedValue: statusName,
-                              label: "Status",
-                              icon: Icons.toggle_on,
-                              onChanged: (value) {
-                                setState(() {
-                                  statusName = value ?? '';
-                                });
-                              },
-                              displayTextFn: (item) => item,
-                              horizontal: true,
+                            Row(
+                              children: [
+                                Flexible(
+                                  child: TextFiledUtils.buildTextField(
+                                    controller: _passwordController,
+                                    label: 'Password',
+                                    hint: 'Enter password',
+                                    icon: Icons.lock,
+                                    validator: (value) {
+                                      if (value == null || value.isEmpty) {
+                                        return 'Please enter password';
+                                      }
+                                    },
+                                  ),
+                                ),
+                                Flexible(
+                                  child:
+                                      RadioButtonUtils.buildRadioGroup<String>(
+                                    items: statusList,
+                                    selectedValue: statusName,
+                                    label: "Status",
+                                    icon: Icons.toggle_on,
+                                    onChanged: (value) {
+                                      setState(() {
+                                        statusName = value ?? '';
+                                      });
+                                    },
+                                    displayTextFn: (item) => item,
+                                    horizontal: true,
+                                  ),
+                                ),
+                              ],
                             ),
                             const SizedBox(height: 16),
                             apiController.isLoading.value
@@ -495,7 +516,7 @@ class _EditVendorState extends State<EditVendor> {
       projectOptions.clear();
     });
     try {
-      String uri = Constants.MASTER_URL + '/project';
+      String uri = Constants.MASTER_URL + '/main-project';
       Map params = {"action": "list"};
 
       Map tempMap = await MethodUtils.apiCall(uri, params);
@@ -506,16 +527,10 @@ class _EditVendorState extends State<EditVendor> {
             projectOptions.add(ProjectModel.fromJson(item));
           }
           if (widget.isEdit && data!.project_code != '') {
-            bool isStateExist = projectOptions
-                .map((e) => e.project_code)
-                .toList()
-                .contains(data!.project_code);
-            if (isStateExist) {
-              selectedState = projectOptions
-                  .firstWhere(
-                      (element) => element.project_code == data!.project_code)
-                  .project_name;
-            }
+            selectedProject = projectOptions
+                .firstWhere(
+                    (element) => element.project_code == data!.project_code)
+                .project_name;
           }
         });
       }
@@ -529,7 +544,7 @@ class _EditVendorState extends State<EditVendor> {
       associatedProjectOptions.clear();
     });
     try {
-      String uri = Constants.MASTER_URL + '/associate_project';
+      String uri = Constants.OPERATION_URL + '/associate-project';
       Map params = {
         "action": "list",
         "project_code": projectOptions
@@ -545,17 +560,11 @@ class _EditVendorState extends State<EditVendor> {
             associatedProjectOptions.add(AssociateModel.fromJson(item));
           }
           if (widget.isEdit && data!.district_code != '') {
-            bool isAssociatedExist = associatedProjectOptions
-                .map((e) => e.associate_project_code)
-                .toList()
-                .contains(data!.associate_project_code);
-            if (isAssociatedExist) {
-              selectedAssociatedProject = associatedProjectOptions
-                  .firstWhere((element) =>
-                      element.associate_project_code ==
-                      data!.associate_project_code)
-                  .associate_project_name;
-            }
+            selectedAssociatedProject = associatedProjectOptions
+                .firstWhere((element) =>
+                    element.associate_project_code ==
+                    data!.associate_project_code)
+                .associate_project_name;
           }
         });
       } else {
@@ -577,7 +586,7 @@ class _EditVendorState extends State<EditVendor> {
         "delete": false,
         "view": true,
         "report": false,
-        "master": false,
+        "master": false
       };
 
       Map params = {
@@ -597,6 +606,7 @@ class _EditVendorState extends State<EditVendor> {
         "contact_person": _contactpController.text.trim(),
         "mobile": _mobileController.text.trim(),
         "email_id": _email_idController.text.trim().toLowerCase(),
+        "password": _passwordController.text.trim(),
         "role": 'NGO/ Vendor Partner',
         "type": typeName,
         "status": statusName == 'Active',
@@ -636,6 +646,10 @@ class _EditVendorState extends State<EditVendor> {
   @override
   void dispose() {
     _nameController.dispose();
+    _contactpController.dispose();
+    _email_idController.dispose();
+    _mobileController.dispose();
+    _passwordController.dispose();
     super.dispose();
   }
 }

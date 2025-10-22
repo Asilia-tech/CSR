@@ -434,8 +434,6 @@ class _VillageListState extends State<VillageList> {
             .district_code,
       };
 
-      print(params);
-
       Map<String, dynamic> tempMap = await apiController.fetchData(uri, params);
       isFind = tempMap['isValid'];
       setState(() {

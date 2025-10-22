@@ -258,14 +258,11 @@ class _HomePageState extends State<HomePage> {
               _buildNavItem(Icons.calendar_today, 'Financial Year', () {
                 Get.toNamed('/financial-list');
               }),
-              _buildNavItem(Icons.business, 'Project', () {
+              _buildNavItem(Icons.business, 'Main Project', () {
                 Get.toNamed('/project-list');
               }),
               _buildNavItem(Icons.volunteer_activism, 'Associate Project', () {
                 Get.toNamed('/associate-project-list');
-              }),
-              _buildNavItem(Icons.attach_money, 'Budget', () {
-                Get.toNamed('/budget-list');
               }),
               _buildNavItem(Icons.local_shipping, 'Vendor/NGO', () {
                 Get.toNamed('/vendor-list');
