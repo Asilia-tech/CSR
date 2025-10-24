@@ -7,6 +7,7 @@ import 'package:sterlite_csr/screens/login_screen.dart';
 import 'package:sterlite_csr/screens/master/district/district_list.dart';
 import 'package:sterlite_csr/screens/master/due_dilligence/due_diligence_list.dart';
 import 'package:sterlite_csr/screens/master/financial/financial_list.dart';
+import 'package:sterlite_csr/screens/master/indicator/indicator_list.dart';
 import 'package:sterlite_csr/screens/master/project/project_list.dart';
 import 'package:sterlite_csr/screens/master/state/state_list.dart';
 import 'package:sterlite_csr/screens/master/user/user_list.dart';
@@ -17,6 +18,9 @@ import 'package:sterlite_csr/screens/reports/beneficiary_page.dart';
 import 'package:sterlite_csr/screens/reports/budget_page.dart';
 import 'package:sterlite_csr/screens/reports/non_beneficiary_page.dart';
 import 'package:sterlite_csr/screens/reports/summary_page.dart';
+import 'package:sterlite_csr/screens/summary/associate-project-summary.dart';
+import 'package:sterlite_csr/screens/summary/data_summary.dart';
+import 'package:sterlite_csr/screens/summary/main-project-summary.dart';
 
 class AppRoutes {
   static final Map<String, Widget> _screens = {
@@ -33,11 +37,13 @@ class AppRoutes {
     'associate-project-list': const AssociateProjectList(),
     'vendor-list': const VendorList(),
     'user-list': const UserList(),
-    'reports': const Flutter404Page(),
-    'key-indicators': const Flutter404Page(),
+    'key-indicators': const IndicatorList(),
     'data-entry': const Flutter404Page(),
     'due-dilligence': DueDiligenceList(),
     'agreement': const Flutter404Page(),
+    'data-summary': const DataSummary(),
+    'main-project-summary': const ProjectSummary(),
+    'associate-project-summary': const AssociateProjectSummary(),
     'report-summary': SummaryPage(),
     'report-budget': BudgetPage(),
     'report-beneficiary': BeneficiaryPage(),
@@ -56,11 +62,13 @@ class AppRoutes {
     'Vendor/NGO': 'vendor-list',
     'User': 'user-list',
     'Change Password': 'change-password',
-    'Reports': 'reports',
     'Key Indicators': 'key-indicators',
     'Data Entry': 'data-entry',
     'Due Dilligence': 'due-dilligence',
     'Agreement': 'agreement',
+    'Data Summary': 'data-summary',
+    'Main Project Summary': 'main-project-summary',
+    'Associate Project Summary': 'associate-project-summary',
     'Summary Report': 'report-summary',
     'Budget Report': 'report-budget',
     'Beneficiary Report': 'report-beneficiary',

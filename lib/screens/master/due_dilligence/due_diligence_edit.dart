@@ -448,7 +448,6 @@ class _EditDueDiligenceState extends State<EditDueDiligence> {
   Future _submitForm() async {
     try {
       String uri = Constants.MASTER_URL + '/duediligence';
-      print(uri);
       Map params = {
         "user_id": userId,
         "action": "update",
@@ -469,10 +468,8 @@ class _EditDueDiligenceState extends State<EditDueDiligence> {
         "status": statusName == 'Active',
         "document_map": document_map,
       };
-      print(params);
 
       Map<String, dynamic> tempMap = await apiController.fetchData(uri, params);
-      print(tempMap);
       setState(() {
         bool isFind = tempMap['isValid'];
         if (isFind) {

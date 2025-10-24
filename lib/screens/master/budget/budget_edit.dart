@@ -143,10 +143,6 @@ class _EditBudgetState extends State<EditBudget> {
                                     context,
                                     _isEdit ? 'Update Budget' : 'Add Budget',
                                     () async {
-                                      // print(totals.values.fold<double>(
-                                      //     0.0,
-                                      //     (previousValue, element) =>
-                                      //         previousValue + element));
                                       if (_formKey.currentState!.validate()) {
                                         if (totals.values.fold<double>(
                                                 0.0,

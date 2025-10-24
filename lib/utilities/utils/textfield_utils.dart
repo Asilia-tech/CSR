@@ -12,6 +12,7 @@ class TextFiledUtils {
     required String hint,
     TextInputType keyboardType = TextInputType.text,
     String? Function(String?)? validator,
+    void Function(String)? onChanged,
     List<TextInputFormatter>? inputFormatter,
   }) {
     // Use a separate stateful widget instead of trying to handle state in a static method
@@ -22,6 +23,7 @@ class TextFiledUtils {
       hint: hint,
       keyboardType: keyboardType,
       validator: validator,
+      onChanged: onChanged,
       inputFormatter: inputFormatter,
     );
   }
@@ -35,6 +37,7 @@ class TextFieldWithElevation extends StatefulWidget {
   final String hint;
   final TextInputType keyboardType;
   final String? Function(String?)? validator;
+  final void Function(String)? onChanged;
   final List<TextInputFormatter>? inputFormatter;
 
   const TextFieldWithElevation({
@@ -45,6 +48,7 @@ class TextFieldWithElevation extends StatefulWidget {
     this.keyboardType = TextInputType.text,
     this.validator,
     this.inputFormatter,
+    this.onChanged,
   });
 
   @override
@@ -127,6 +131,7 @@ class _TextFieldWithElevationState extends State<TextFieldWithElevation> {
                   ),
                   keyboardType: widget.keyboardType,
                   validator: widget.validator,
+                  onChanged: widget.onChanged,
                 ),
               ),
             ),

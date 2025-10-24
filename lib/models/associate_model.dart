@@ -13,6 +13,7 @@ class AssociateModel {
   final List<Map<String, dynamic>> location;
   final String total_budget;
   final String milestone;
+  final List<String> milestoneList;
   final String ENFAID;
   final String entity;
   final String budget_source;
@@ -34,6 +35,7 @@ class AssociateModel {
       required this.end_date,
       required this.total_budget,
       required this.milestone,
+      required this.milestoneList,
       required this.ENFAID,
       required this.entity,
       required this.budget_source,
@@ -57,6 +59,7 @@ class AssociateModel {
       end_date: json['end_date'] ?? '',
       total_budget: json['total_budget'] ?? '',
       milestone: json['milestone'] ?? '',
+      milestoneList: List<String>.from(json['milestoneList'] ?? []),
       ENFAID: json['ENFAID'] ?? '',
       entity: json['entity'] ?? '',
       budget_source: json['budget_source'] ?? '',

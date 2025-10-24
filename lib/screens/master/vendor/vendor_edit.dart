@@ -559,7 +559,7 @@ class _EditVendorState extends State<EditVendor> {
           for (var item in tempList) {
             associatedProjectOptions.add(AssociateModel.fromJson(item));
           }
-          if (widget.isEdit && data!.district_code != '') {
+          if (widget.isEdit && data!.associate_project_code != '') {
             selectedAssociatedProject = associatedProjectOptions
                 .firstWhere((element) =>
                     element.associate_project_code ==
@@ -610,6 +610,8 @@ class _EditVendorState extends State<EditVendor> {
         "role": 'NGO/ Vendor Partner',
         "type": typeName,
         "status": statusName == 'Active',
+        "project_name": selectedProject,
+        "associate_project_name": selectedAssociatedProject,
         "project_code": projectOptions
             .firstWhere((element) => element.project_name == selectedProject)
             .project_code,

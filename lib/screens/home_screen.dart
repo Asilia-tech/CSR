@@ -268,10 +268,36 @@ class _HomePageState extends State<HomePage> {
                 Get.toNamed('/vendor-list');
               }),
               if (userRole == 'super_admin') ...[
+                _buildSummaryItems(context),
                 _buildNavItem(Icons.person, 'User', () {
                   Get.toNamed('/user-list');
                 }),
               ],
+            ],
+          ),
+      ],
+    );
+  }
+
+  Widget _buildSummaryItems(BuildContext context) {
+    return Column(
+      children: [
+        if (userRole == 'super_admin')
+          DecorationWidgets.buildExpandableNavItem(
+            context,
+            icon: Icons.storage,
+            title: 'Summary',
+            initiallyExpanded: false,
+            children: [
+              // _buildNavItem(Icons.summarize, 'Data Summary', () {
+              //   Get.toNamed('/data-summary');
+              // }),
+              // _buildNavItem(Icons.account_balance, 'Main Project Summary', () {
+              //   Get.toNamed('/main-project-summary');
+              // }),
+              _buildNavItem(Icons.no_backpack, 'Associate Project Summary', () {
+                Get.toNamed('/associate-project-summary');
+              })
             ],
           ),
       ],
@@ -284,7 +310,7 @@ class _HomePageState extends State<HomePage> {
         if (userRole == 'super_admin')
           DecorationWidgets.buildExpandableNavItem(
             context,
-            icon: Icons.storage,
+            icon: Icons.line_axis,
             title: 'Reports',
             initiallyExpanded: true,
             children: [
@@ -370,9 +396,12 @@ class _HomePageState extends State<HomePage> {
                                   ? Icons.nightlight_round
                                   : Icons.wb_sunny,
                             ),
+                            hoverColor: themeController.isDarkMode.value
+                                ? Colors.grey[800]
+                                : Colors.grey[300],
                             color: themeController.isDarkMode.value
                                 ? Colors.white
-                                : Constants.secondaryColor,
+                                : Constants.group3_light,
                             iconSize: 24.0,
                             onPressed: () => themeController.toggleTheme(),
                             tooltip: themeController.isDarkMode.value
@@ -401,7 +430,7 @@ class _HomePageState extends State<HomePage> {
                 ReportUtils.buildMetricCard(
                   context,
                   'Due Diligence\n Completed',
-                  tempCount['course_code']?.toString() ?? '00',
+                  tempCount['due_diligence']?.toString() ?? '00',
                   Colors.indigo[400]!,
                   Icons.checklist,
                   Colors.indigo[700]!,
@@ -410,7 +439,7 @@ class _HomePageState extends State<HomePage> {
                 ReportUtils.buildMetricCard(
                   context,
                   'Agreement Completed',
-                  tempCount['associate_project_code']?.toString() ?? '00',
+                  tempCount['agreement']?.toString() ?? '00',
                   Colors.amber[400]!,
                   Icons.book,
                   Colors.amber[700]!,
@@ -419,7 +448,7 @@ class _HomePageState extends State<HomePage> {
                 ReportUtils.buildMetricCard(
                   context,
                   'Upcoming Reports',
-                  tempCount['vendor_code']?.toString() ?? '00',
+                  tempCount['beneficiary_indicator']?.toString() ?? '00',
                   Colors.red[400]!,
                   Icons.line_axis,
                   Colors.red[700]!,

@@ -10,6 +10,7 @@ import 'package:sterlite_csr/models/user_model.dart';
 import 'package:sterlite_csr/models/village_model.dart';
 import 'package:sterlite_csr/utilities/api-service.dart';
 import 'package:sterlite_csr/utilities/function_utils.dart';
+import 'package:sterlite_csr/utilities/location_utils.dart';
 import 'package:sterlite_csr/utilities/method_utils.dart';
 import 'package:sterlite_csr/utilities/utils/datepicker_utils.dart';
 import 'package:sterlite_csr/utilities/utils/dropdown_utils.dart';
@@ -41,7 +42,10 @@ class _EditAssociateState extends State<EditAssociate> {
       TextEditingController(text: DateTime.now().toString());
   final TextEditingController _ENFAIDController = TextEditingController();
   final TextEditingController _budgetController = TextEditingController();
-  final TextEditingController _milestoneController = TextEditingController();
+  final TextEditingController _milestoneController =
+      TextEditingController(text: '0');
+
+  List<TextEditingController> milestoneList = [];
 
   AssociateModel? data;
 
@@ -102,11 +106,14 @@ class _EditAssociateState extends State<EditAssociate> {
       _ENFAIDController.text = data!.ENFAID;
       _budgetController.text = data!.total_budget;
       _milestoneController.text = data!.milestone;
+      milestoneList = data!.milestoneList.map((e) {
+        return TextEditingController(text: e);
+      }).toList();
       entityName = data!.entity;
       focusAreaName = data!.focus_area;
       sourceName = data!.budget_source;
       locationList = data!.location;
-      tempLocation = extractSelectedLocations(locationList);
+      tempLocation = LocationUtils.extractSelectedLocations(locationList);
       statusName = data!.status ? 'Active' : 'Inactive';
     }
   }
@@ -286,9 +293,46 @@ class _EditAssociateState extends State<EditAssociate> {
                                   return 'Please enter milestone';
                                 }
                               },
+                              onChanged: (value) {
+                                if (value.isNotEmpty) {
+                                  setState(() {
+                                    int length = int.parse(value);
+                                    List<TextEditingController> newList = [];
+                                    for (int i = 0; i < length; i++) {
+                                      if (i < milestoneList.length) {
+                                        newList.add(milestoneList[i]);
+                                      } else {
+                                        newList.add(
+                                            TextEditingController(text: ''));
+                                      }
+                                    }
+                                    milestoneList = newList;
+                                  });
+                                }
+                              },
                               keyboardType: TextInputType.number,
                               inputFormatter:
-                                  Utils.allowInputFormatter('[0-9.]'),
+                                  Utils.allowInputFormatter('[0-9]'),
+                            ),
+                            Column(
+                              children: List.generate(
+                                milestoneList.length,
+                                (index) => Padding(
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 8.0),
+                                  child: TextFiledUtils.buildTextField(
+                                    controller: milestoneList[index],
+                                    label: 'Milestone ${index + 1} title',
+                                    hint: 'Enter milestone ${index + 1} title',
+                                    icon: Icons.flag,
+                                    validator: (value) {
+                                      if (value == null || value.isEmpty) {
+                                        return 'Please enter milestone ${index + 1} title';
+                                      }
+                                    },
+                                  ),
+                                ),
+                              ),
                             ),
                             Row(
                               children: [
@@ -557,8 +601,8 @@ class _EditAssociateState extends State<EditAssociate> {
                                             ? 'Edit Associate Project'
                                             : 'Add Associate Project',
                                         () async {
-                                      locationList =
-                                          convertToNestedLocationFormat(
+                                      locationList = LocationUtils
+                                          .convertToNestedLocationFormat(
                                         stateOptions,
                                         districtOptions,
                                         villageOptions,
@@ -788,78 +832,6 @@ class _EditAssociateState extends State<EditAssociate> {
     }
   }
 
-  Map<String, List<String>> extractSelectedLocations(
-      List<Map<String, dynamic>> locationList) {
-    List<String> selectedState = [];
-    List<String> selectedDistrict = [];
-    List<String> selectedVillage = [];
-
-    for (var state in locationList) {
-      selectedState.add(state['state_name'] as String);
-
-      for (var district in state['districts'] as List<dynamic>) {
-        selectedDistrict.add(district['district_name'] as String);
-
-        for (var village in district['villages'] as List<dynamic>) {
-          selectedVillage.add(village['village_name'] as String);
-        }
-      }
-    }
-
-    return {
-      'selectedState': selectedState,
-      'selectedDistrict': selectedDistrict,
-      'selectedVillage': selectedVillage,
-    };
-  }
-
-  List<Map<String, dynamic>> convertToNestedLocationFormat(
-    List<StateModel> stateOptions,
-    List<DistrictModel> districtOptions,
-    List<VillageModel> villageOptions,
-    List<String> selectedState,
-    List<String> selectedDistrict,
-    List<String> selectedVillage,
-  ) {
-    final selectedStates = stateOptions
-        .where((state) => selectedState.contains(state.name))
-        .toList();
-
-    List<Map<String, dynamic>> location = selectedStates.map((state) {
-      final stateDistricts = districtOptions
-          .where((district) =>
-              selectedDistrict.contains(district.name) &&
-              district.state_code == state.state_code)
-          .toList();
-
-      final districts = stateDistricts.map((district) {
-        final districtVillages = villageOptions
-            .where((village) =>
-                selectedVillage.contains(village.name) &&
-                village.district_code == district.district_code)
-            .map((village) => {
-                  'village_id': village.village_code,
-                  'village_name': village.name,
-                })
-            .toList();
-
-        return {
-          'district_id': district.district_code,
-          'district_name': district.name,
-          'villages': districtVillages,
-        };
-      }).toList();
-
-      return {
-        'state_id': state.state_code,
-        'state_name': state.name,
-        'districts': districts,
-      };
-    }).toList();
-
-    return location;
-  }
-
   Future _submitForm() async {
     try {
       String startD = Utils.formatDate(
@@ -894,6 +866,7 @@ class _EditAssociateState extends State<EditAssociate> {
         "end_date": endD,
         "total_budget": _budgetController.text,
         "milestone": _milestoneController.text,
+        "milestoneList": milestoneList.map((e) => e.text.trim()).toList(),
         "ENFAID": _ENFAIDController.text,
         "entity": entityName,
         "budget_source": sourceName,

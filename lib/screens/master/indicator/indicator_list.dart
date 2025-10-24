@@ -2,9 +2,9 @@ import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:sterlite_csr/constants.dart';
 import 'package:sterlite_csr/models/associate_model.dart';
-import 'package:sterlite_csr/models/due_diligence_model.dart';
+import 'package:sterlite_csr/models/indicator_model.dart';
 import 'package:sterlite_csr/models/project_model.dart';
-import 'package:sterlite_csr/screens/master/due_dilligence/due_diligence_edit.dart';
+import 'package:sterlite_csr/screens/master/indicator/indicator_edit.dart';
 import 'package:sterlite_csr/utilities/api-service.dart';
 import 'package:sterlite_csr/utilities/function_utils.dart';
 import 'package:sterlite_csr/utilities/method_utils.dart';
@@ -13,14 +13,14 @@ import 'package:sterlite_csr/utilities/widget_decoration.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sterlite_csr/utilities/utils/search-dropdown_utils.dart';
 
-class DueDiligenceList extends StatefulWidget {
-  const DueDiligenceList({super.key});
+class IndicatorList extends StatefulWidget {
+  const IndicatorList({super.key});
 
   @override
-  _DueDiligenceListState createState() => _DueDiligenceListState();
+  _IndicatorListState createState() => _IndicatorListState();
 }
 
-class _DueDiligenceListState extends State<DueDiligenceList> {
+class _IndicatorListState extends State<IndicatorList> {
   APIController apiController = Get.put(APIController());
   bool isFind = false;
   String msg = 'Please wait...';
@@ -33,8 +33,8 @@ class _DueDiligenceListState extends State<DueDiligenceList> {
 
   final TextEditingController _searchController = TextEditingController();
 
-  List<DueDiligenceModel> _duediligences = [];
-  List<DueDiligenceModel> _filteredduediligence = [];
+  List<IndicatorModel> _indicators = [];
+  List<IndicatorModel> _filteredindicator = [];
 
   String _searchQuery = '';
   int _rowsPerPage = 5;
@@ -58,7 +58,7 @@ class _DueDiligenceListState extends State<DueDiligenceList> {
   void _onDesktopSearchChanged() {
     setState(() {
       _searchQuery = _searchController.text;
-      _filterduediligences();
+      _filterindicators();
     });
   }
 
@@ -66,10 +66,10 @@ class _DueDiligenceListState extends State<DueDiligenceList> {
     String query = _searchController.text.toLowerCase();
     setState(() {
       if (query.isEmpty) {
-        _filteredduediligence = List.from(_duediligences); // restore all data
+        _filteredindicator = List.from(_indicators); // restore all data
       } else {
-        _filteredduediligence = _duediligences.where((e) {
-          final name = e.vendor_name.toLowerCase();
+        _filteredindicator = _indicators.where((e) {
+          final name = e.indicator_name.toLowerCase();
           final code = e.project_name.toLowerCase();
           return name.contains(query) || code.contains(query);
         }).toList();
@@ -77,39 +77,35 @@ class _DueDiligenceListState extends State<DueDiligenceList> {
     });
   }
 
-  void _filterduediligences() {
+  void _filterindicators() {
     if (_searchQuery.isEmpty) {
-      _filteredduediligence = List.from(_duediligences);
+      _filteredindicator = List.from(_indicators);
     } else {
-      _filteredduediligence = _duediligences.where((States) {
-        return States.vendor_name
+      _filteredindicator = _indicators.where((Indicators) {
+        return Indicators.indicator_name
                 .toLowerCase()
                 .contains(_searchQuery.toLowerCase()) ||
-            States.project_name
+            Indicators.project_name
                 .toLowerCase()
                 .contains(_searchQuery.toLowerCase());
       }).toList();
     }
-    _sortduediligences();
+    _sortindicators();
   }
 
-  void _sortduediligences() {
-    _filteredduediligence.sort((a, b) {
+  void _sortindicators() {
+    _filteredindicator.sort((a, b) {
       var aValue;
       var bValue;
 
       switch (_sortColumnIndex) {
         case 0: // ID
-          aValue = a.vendor_name;
-          bValue = b.vendor_name;
+          aValue = a.indicator_name;
+          bValue = b.indicator_name;
           break;
         case 1: // Name
           aValue = a.project_name;
           bValue = b.project_name;
-          break;
-        case 2: // Salary
-          aValue = a.status;
-          bValue = b.status;
           break;
         default:
           aValue = a.associate_project_name;
@@ -134,9 +130,8 @@ class _DueDiligenceListState extends State<DueDiligenceList> {
     return LayoutBuilder(builder: (context, constraints) {
       bool isDesktop = constraints.maxWidth < 600;
       return Scaffold(
-        appBar: UtilsWidgets.buildAppBar(
-            'DueDiligence Project Database', Get.isDarkMode,
-            subtitle: 'Manage your associate project efficiently',
+        appBar: UtilsWidgets.buildAppBar('Indicator Database', Get.isDarkMode,
+            subtitle: 'Manage your indicator efficiently',
             leading: !isDesktop
                 ? null
                 : Container(
@@ -156,11 +151,11 @@ class _DueDiligenceListState extends State<DueDiligenceList> {
                 onPressed: () async {
                   Navigator.of(context).push(
                     MaterialPageRoute(
-                      builder: (context) => const EditDueDiligence(),
+                      builder: (context) => const EditIndicator(),
                     ),
                   );
                 },
-                label: Text('Add duediligence',
+                label: Text('Add indicator',
                     style: TextStyle(
                       color: Get.isDarkMode
                           ? Colors.white
@@ -214,11 +209,11 @@ class _DueDiligenceListState extends State<DueDiligenceList> {
                       if (value != null) {
                         setState(() {
                           selectedAssociate = value;
-                          _duediligences.clear();
-                          _filteredduediligence.clear();
+                          _indicators.clear();
+                          _filteredindicator.clear();
                         });
                       }
-                      await getDueDiligenceProjectInfo();
+                      await getIndicatorInfo();
                     },
                     displayTextFn: (item) => item,
                     validator: (value) {
@@ -232,7 +227,7 @@ class _DueDiligenceListState extends State<DueDiligenceList> {
             ),
             !isFind
                 ? Center(child: DecorationWidgets.filterTextStyle(msg))
-                : _filteredduediligence.isEmpty
+                : _filteredindicator.isEmpty
                     ? Center(child: DecorationWidgets.filterTextStyle(msg))
                     : Expanded(
                         child: Container(
@@ -255,7 +250,7 @@ class _DueDiligenceListState extends State<DueDiligenceList> {
                                         MainAxisAlignment.spaceBetween,
                                     children: [
                                       Text(
-                                        'Total: ${_filteredduediligence.length} duediligences',
+                                        'Total: ${_filteredindicator.length} indicators',
                                         style: const TextStyle(
                                           fontWeight: FontWeight.bold,
                                           fontSize: 16,
@@ -371,7 +366,7 @@ class _DueDiligenceListState extends State<DueDiligenceList> {
           for (var item in tempList) {
             projectOptions.add(ProjectModel.fromJson(item));
           }
-          msg = 'Select a project and associate project to view duediligences';
+          msg = 'Select a project and associate project to view indicators';
         } else {
           msg = tempMap['message'];
         }
@@ -401,7 +396,7 @@ class _DueDiligenceListState extends State<DueDiligenceList> {
           for (var item in tempList) {
             associateOptions.add(AssociateModel.fromJson(item));
           }
-          msg = 'Select a city to view duediligences';
+          msg = 'Select a city to view indicators';
         } else {
           msg = tempMap['message'];
         }
@@ -411,12 +406,12 @@ class _DueDiligenceListState extends State<DueDiligenceList> {
     }
   }
 
-  Future getDueDiligenceProjectInfo() async {
+  Future getIndicatorInfo() async {
     setState(() {
-      _duediligences.clear();
+      _indicators.clear();
     });
     try {
-      String uri = Constants.MASTER_URL + '/duediligence';
+      String uri = Constants.OPERATION_URL + '/beneficiary-indicator';
       Map params = {
         "action": "list",
         "project_code": projectOptions
@@ -428,14 +423,16 @@ class _DueDiligenceListState extends State<DueDiligenceList> {
             .associate_project_code,
       };
       Map<String, dynamic> tempMap = await apiController.fetchData(uri, params);
+
       setState(() {
         isFind = tempMap['isValid'];
         if (isFind) {
-          List tempList = tempMap['info']['due_diligences'];
+          print(tempMap);
+          List tempList = tempMap['info'];
           for (var item in tempList) {
-            _duediligences.add(DueDiligenceModel.fromJson(item));
+            _indicators.add(IndicatorModel.fromJson(item));
           }
-          _filteredduediligence = List.from(_duediligences);
+          _filteredindicator = List.from(_indicators);
           _searchController.addListener(_onDesktopSearchChanged);
           _searchController.addListener(_onMobileSearchChanged);
         } else {
@@ -447,25 +444,25 @@ class _DueDiligenceListState extends State<DueDiligenceList> {
     }
   }
 
-  Future fetchDueDiligenceProjectInfo(String duediligence_code) async {
+  Future fetchIndicatorInfo(String indicator_code) async {
     try {
-      String uri = Constants.MASTER_URL + '/duediligence';
-      Map params = {"action": "get", 'duediligence_code': duediligence_code};
+      String uri = Constants.OPERATION_URL + '/beneficiary-indicator';
+      Map params = {"action": "get", 'indicator_code': indicator_code};
 
       Map<String, dynamic> tempMap = await MethodUtils.apiCall(uri, params);
 
       setState(() {
         if (tempMap['isValid']) {
-          DueDiligenceModel duediligenceData =
-              DueDiligenceModel.fromJson(tempMap['info']);
-          _duediligences.removeWhere(
-              (element) => element.duediligence_code == duediligence_code);
-          _duediligences.add(duediligenceData);
-          _filteredduediligence.removeWhere(
-              (element) => element.duediligence_code == duediligence_code);
-          _filteredduediligence.add(duediligenceData);
+          IndicatorModel indicatorData =
+              IndicatorModel.fromJson(tempMap['info']);
+          _indicators.removeWhere(
+              (element) => element.indicator_code == indicator_code);
+          _indicators.add(indicatorData);
+          _filteredindicator.removeWhere(
+              (element) => element.indicator_code == indicator_code);
+          _filteredindicator.add(indicatorData);
         } else {
-          String msg = tempMap['message'] ?? "Failed to load duediligence data";
+          String msg = tempMap['message'] ?? "Failed to load indicator data";
           UtilsWidgets.showToastFunc(msg);
         }
       });
@@ -507,7 +504,7 @@ class _DueDiligenceListState extends State<DueDiligenceList> {
                 setState(() {
                   _sortColumnIndex = columnIndex;
                   _sortAscending = ascending;
-                  _sortduediligences();
+                  _sortindicators();
                 });
               },
             ),
@@ -519,19 +516,19 @@ class _DueDiligenceListState extends State<DueDiligenceList> {
                 setState(() {
                   _sortColumnIndex = columnIndex;
                   _sortAscending = ascending;
-                  _sortduediligences();
+                  _sortindicators();
                 });
               },
             ),
             DataColumn(
-              label: const Text('Status',
+              label: const Text('Reviewer Status',
                   style: TextStyle(
                       color: Colors.white, fontWeight: FontWeight.bold)),
               onSort: (columnIndex, ascending) {
                 setState(() {
                   _sortColumnIndex = columnIndex;
                   _sortAscending = ascending;
-                  _sortduediligences();
+                  _sortindicators();
                 });
               },
               numeric: true,
@@ -542,19 +539,18 @@ class _DueDiligenceListState extends State<DueDiligenceList> {
                       color: Colors.white, fontWeight: FontWeight.bold)),
             ),
           ],
-          source: _duediligencesDataSource(
+          source: _indicatorsDataSource(
             context,
-            _filteredduediligence,
-            onEditPressed: (DueDiligenceProject) async {
+            _filteredindicator,
+            onEditPressed: (Indicator) async {
               final result = await Navigator.of(context).push(
                 MaterialPageRoute(
-                  builder: (context) => EditDueDiligence(
-                      isEdit: true, due_diligence: DueDiligenceProject),
+                  builder: (context) =>
+                      EditIndicator(isEdit: true, indicator: Indicator),
                 ),
               );
               if (result == true) {
-                await fetchDueDiligenceProjectInfo(
-                    DueDiligenceProject.duediligence_code);
+                await fetchIndicatorInfo(Indicator.indicator_code);
               }
             },
           ),
@@ -573,7 +569,7 @@ class _DueDiligenceListState extends State<DueDiligenceList> {
             controller: _searchController,
             decoration: InputDecoration(
               labelText: 'Search',
-              hintText: 'Search by name or duediligence code',
+              hintText: 'Search by name or indicator code',
               prefixIcon: Icon(Icons.search),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -594,22 +590,22 @@ class _DueDiligenceListState extends State<DueDiligenceList> {
                       DataColumn(
                         label: Text('Name'),
                         onSort: (columnIndex, ascending) {
-                          _duediligences.sort((a, b) => Utils.compareString(
-                              ascending,
-                              a.duediligence_code,
-                              b.duediligence_code));
+                          _indicators.sort((a, b) => Utils.compareString(
+                              ascending, a.indicator_code, b.indicator_code));
                           setState(() {
                             _sortAscending = ascending;
                           });
                         },
                       ),
-                      DataColumn(label: Text('DueDiligenceProject Code')),
+                      DataColumn(label: Text('Indicator Code')),
+                      DataColumn(label: Text('Reviewer Status')),
                       DataColumn(label: Text('Edit')),
                     ],
-                    _filteredduediligence
+                    _filteredindicator
                         .map((e) => DataRow(cells: [
-                              DataCell(Text(e.duediligence_code)),
-                              DataCell(Text(e.duediligence_code)),
+                              DataCell(Text(e.indicator_name)),
+                              DataCell(Text(e.indicator_code)),
+                              DataCell(Text(e.reviewer_status['status'])),
                               DataCell(IconButton(
                                 icon: const Icon(
                                   Icons.edit,
@@ -618,13 +614,10 @@ class _DueDiligenceListState extends State<DueDiligenceList> {
                                 onPressed: () async {
                                   final result = await Navigator.of(context)
                                       .push(MaterialPageRoute(
-                                          builder: (context) =>
-                                              EditDueDiligence(
-                                                  isEdit: true,
-                                                  due_diligence: e)));
+                                          builder: (context) => EditIndicator(
+                                              isEdit: true, indicator: e)));
                                   if (result == true) {
-                                    await fetchDueDiligenceProjectInfo(
-                                        e.duediligence_code);
+                                    await fetchIndicatorInfo(e.indicator_code);
                                   }
                                 },
                               )),
@@ -643,31 +636,31 @@ class _DueDiligenceListState extends State<DueDiligenceList> {
   }
 }
 
-class _duediligencesDataSource extends DataTableSource {
+class _indicatorsDataSource extends DataTableSource {
   final BuildContext context;
-  final List<DueDiligenceModel> duediligences;
-  final Function(DueDiligenceModel) onEditPressed;
+  final List<IndicatorModel> indicators;
+  final Function(IndicatorModel) onEditPressed;
 
-  _duediligencesDataSource(this.context, this.duediligences,
+  _indicatorsDataSource(this.context, this.indicators,
       {required this.onEditPressed});
 
   @override
   DataRow? getRow(int index) {
-    if (index >= duediligences.length) {
+    if (index >= indicators.length) {
       return null;
     }
-    final DueDiligenceProject = duediligences[index];
-    String status = DueDiligenceProject.status ? 'Active' : 'Inactive';
+    final Indicator = indicators[index];
+    String status = Indicator.reviewer_status['status'];
     return DataRow(
       cells: [
-        DataCell(Text(DueDiligenceProject.project_name)),
-        DataCell(Text(DueDiligenceProject.duediligence_code)),
+        DataCell(Text(Indicator.indicator_name)),
+        DataCell(Text(Indicator.indicator_code)),
         DataCell(DecorationWidgets.buildStatusTag(context, status)),
         DataCell(
           IconButton(
             icon: const Icon(Icons.edit, size: 16),
             visualDensity: VisualDensity.compact,
-            onPressed: () => onEditPressed(DueDiligenceProject),
+            onPressed: () => onEditPressed(Indicator),
             tooltip: 'Edit',
             color: Colors.blue,
           ),
@@ -680,7 +673,7 @@ class _duediligencesDataSource extends DataTableSource {
   bool get isRowCountApproximate => false;
 
   @override
-  int get rowCount => duediligences.length;
+  int get rowCount => indicators.length;
 
   @override
   int get selectedRowCount => 0;

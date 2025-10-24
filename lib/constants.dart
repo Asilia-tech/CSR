@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 class Constants {
   static String CLIENTNAME = 'CEO';
   static String APPNAME = 'Sterlite CSR';
-  static const appVersion = '1.2.0';
+  static const appVersion = '1.3.0';
 
   static Color primaryColor = Color.fromARGB(255, 8, 51, 68);
   static Color secondaryColor = Color.fromARGB(255, 6, 182, 212);
